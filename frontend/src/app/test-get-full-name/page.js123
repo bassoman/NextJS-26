@@ -86,7 +86,7 @@ export default function TestGetFullNamePage() {
         ⚡ High-Speed Batch Name Lookup Test Portal
       </h2>
       <p className="text-slate-600 text-sm mb-6">
-        This diagnostic page tests the optimized MySQL <code>IN()</code> routing matrix by querying <strong>KN6PIV, KM6HYK, KM6UYM and others</strong> all inside exactly one network payload.
+        This diagnostic page tests the optimized SQLite <code>IN()</code> routing matrix by querying <strong>KN6PIV, KM6HYK, KM6UYM and others</strong> all inside exactly one network payload.
       </p>
 
       <button

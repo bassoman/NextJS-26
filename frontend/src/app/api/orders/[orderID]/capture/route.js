@@ -2,6 +2,10 @@
 
 import { NextResponse } from "next/server";
 import db from "@/lib/sqlite";
+import {
+  invokePayPalLambda,
+  isPayPalLambdaConfigured,
+} from "@/lib/paypal-lambda";
 
 // Helper function to generate an access token from PayPal Sandbox
 async function generateAccessToken() {
@@ -64,38 +68,41 @@ export async function POST(request, { params }) {
       `[Serverless API] Capturing PayPal Order ID: ${orderID}`
     );
 
-    const accessToken = await generateAccessToken();
-
     const baseUrl =
       process.env.PAYPAL_BASE_URL?.trim() ||
       "https://api-m.sandbox.paypal.com";
+    let responseOk = true;
+    let data;
 
-    const response = await fetch(
-      `${baseUrl}/v2/checkout/orders/${orderID}/capture`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    const rawText = await response.text();
-
-    if (!rawText || rawText.trim().length === 0) {
-      throw new Error(
-        `PayPal Server returned an empty response string with status: ${response.status}`
+    if (isPayPalLambdaConfigured("capture")) {
+      data = await invokePayPalLambda("capture", { orderID });
+    } else {
+      const accessToken = await generateAccessToken();
+      const response = await fetch(
+        `${baseUrl}/v2/checkout/orders/${orderID}/capture`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
       );
+      responseOk = response.ok;
+      const rawText = await response.text();
+      if (!rawText || rawText.trim().length === 0) {
+        throw new Error(
+          `PayPal Server returned an empty response string with status: ${response.status}`
+        );
+      }
+      data = JSON.parse(rawText);
     }
-
-    const data = JSON.parse(rawText);
 
     console.log(
       `PayPal order status for order ${orderID}: ${data.status}`
     );
 
-    if (!response.ok) {
+    if (!responseOk) {
       console.error(
         "❌ PayPal Capture API Rejection Payload:",
         data

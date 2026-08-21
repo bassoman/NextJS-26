@@ -9,12 +9,11 @@
     "ghcr.io/devcontainers/features/git:1": {}
   },
 
-  "forwardPorts": [3000, 5000, 5555, 3306],
+  "forwardPorts": [3000, 5000, 5555],
   "portsAttributes": {
     "3000": { "label": "frontend (Next.js)" },
     "5000": { "label": "backend (Express)" },
-    "5555": { "label": "backend_paypal (Express)" },
-    "3306": { "label": "MySQL 8.4" }
+    "5555": { "label": "backend_paypal (Express)" }
   },
 
   "postCreateCommand": "bash .devcontainer/postCreate.sh",

@@ -5,7 +5,7 @@
 // When the PayPAl interaction has either successfully completed a transaction, it will return a success
 // indication and a success message will be displayed to the user. Otherwise, an error message will be 
 // displayed to the user indicating that the transaction failed. The transaction is also recorded in
-// a mySQL database that initially records the transaction and sets the status of the proposed transaction
+// a SQLite database that initially records the transaction and sets the status of the proposed transaction
 // to "pending". When the PayPal transaction is completed, the status is updated to "completed" or "failed"
 // as appropriate. The PayPal server code is in its own directory right now because it was a more or less
 // independent project that now needs to be integrated into the NextJS project. It is expected that this 

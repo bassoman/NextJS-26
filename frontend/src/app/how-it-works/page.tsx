@@ -27,7 +27,7 @@ export default function HowItWorks() {
                                                          │ (Finalizes payment)
                                                          ▼
                                                     [Main Backend (5000)]
-                                                         │ (Updates MySQL status)
+                                                         │ (Updates SQLite status)
                                                          ▼
                                                     [Database Updated]
   `;
