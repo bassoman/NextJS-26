@@ -18,6 +18,19 @@ newsletter-report.txt
 .env.production
 .env.test
 .env.*.local
+.env.*
+!.env.example
+*.env
+
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
 
 #Node.js
 /node_modules

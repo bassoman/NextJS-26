@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    working_dir: /workspace
+    command: sleep infinity
+    environment:
+      - MY_SQL_HOST=db
+      - MY_SQL_USER=carcuser
+      - MY_SQL_PASSWORD=carcpassword
+      - MY_SQL_DATABASE=carcmbrlst
+      - MY_SQL_PORT=3306
+    depends_on:
+      - db
+    ports:
+      - "3000:3000" # frontend (next dev)
+      - "5000:5000" # backend (express)
+      - "5555:5555" # backend_paypal
+
+  # Local stand-in for the remote Dreamhost MySQL 8.4 database (see DesignNotes/MySQLaccess.txt)
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=carcmbrlst
+      - MYSQL_USER=carcuser
+      - MYSQL_PASSWORD=carcpassword
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../backup.sql:/docker-entrypoint-initdb.d/backup.sql:ro
+    ports:
+      - "3306:3306"
+
+volumes:
+  mysql-data:
