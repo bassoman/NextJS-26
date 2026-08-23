@@ -14,12 +14,9 @@ ENVIRONMENT=development            # or production, for live.env
 PAYPAL_BASE_URL=https://api-m.sandbox.paypal.com   # or https://api-m.paypal.com, for live.env
 PAYPAL_CLIENT_ID=
 PAYPAL_CLIENT_SECRET=
-AWS_REGION=us-west-2
-PAYPAL_CREATE_ORDER_FUNCTION=paypal-create-order
-PAYPAL_CAPTURE_ORDER_FUNCTION=paypal-capture-order
 ```
 
-Fill in the `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` values. The Lambda function names are the same for both stages; sandbox vs. live behavior comes from the credentials themselves, not a separate function per stage.
+Fill in the `PAYPAL_CLIENT_ID`/`PAYPAL_CLIENT_SECRET` values. Sandbox vs. live behavior comes from the credentials themselves.
 
 ## Running the PayPal backend (backend_paypal/)
 

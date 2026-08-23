@@ -1,10 +1,6 @@
 // frontend/src/app/api/orders/route.js
 
 import db from "@/lib/sqlite";
-import {
-  invokePayPalLambda,
-  isPayPalLambdaConfigured,
-} from "@/lib/paypal-lambda";
 import { NextResponse } from "next/server";
 
 async function generateAccessToken() {
@@ -65,40 +61,33 @@ export async function POST(request) {
       "https://api-m.sandbox.paypal.com";
     const verifiedPrice = parseFloat(row.pp_total).toFixed(2);
 
-    let orderData;
-    if (isPayPalLambdaConfigured("create")) {
-      orderData = await invokePayPalLambda("create", {
-        cart: [{ name: "CARC dues", price: verifiedPrice }],
-      });
-    } else {
-      const accessToken = await generateAccessToken();
-      const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          intent: "CAPTURE",
-          purchase_units: [
-            {
-              reference_id: trackingToken,
-              amount: {
-                currency_code: "USD",
-                value: verifiedPrice,
-              },
+    const accessToken = await generateAccessToken();
+    const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            reference_id: trackingToken,
+            amount: {
+              currency_code: "USD",
+              value: verifiedPrice,
             },
-          ],
-        }),
-      });
-      const rawText = await response.text();
+          },
+        ],
+      }),
+    });
+    const rawText = await response.text();
 
-      if (!rawText || !response.ok) {
-        throw new Error(`PayPal Order API Rejection: ${rawText}`);
-      }
-
-      orderData = JSON.parse(rawText);
+    if (!rawText || !response.ok) {
+      throw new Error(`PayPal Order API Rejection: ${rawText}`);
     }
+
+    const orderData = JSON.parse(rawText);
 
     if (typeof orderData.id !== "string") {
       throw new Error("PayPal order response did not include an order ID");

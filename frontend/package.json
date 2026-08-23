@@ -11,8 +11,6 @@
     "generate-gallery": "node scripts/generate-gallery-data.js"
   },
   "dependencies": {
-    "@aws-sdk/client-lambda": "^3.787.0",
-    "@aws-sdk/credential-provider-ini": "3.973.14",
     "better-sqlite3": "13.0.3",
     "exif-parser": "^0.1.12",
     "image-size": "^2.0.2",
