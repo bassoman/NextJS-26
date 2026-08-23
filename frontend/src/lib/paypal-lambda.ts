@@ -1,9 +1,13 @@
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
+import { fromIni } from "@aws-sdk/credential-provider-ini";
 
 type LambdaPayload = Record<string, unknown>;
 
 const lambdaClient = new LambdaClient({
   region: process.env.AWS_REGION || "us-west-2",
+  credentials: fromIni({
+    profile: process.env.AWS_PROFILE,
+  }),
 });
 
 function getFunctionName(kind: "create" | "capture") {
