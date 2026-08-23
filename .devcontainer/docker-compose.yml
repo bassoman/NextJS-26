@@ -6,7 +6,7 @@ services:
     volumes:
       - ..:/workspace:cached
       - ../../aws_creds:/home/vscode/.aws
-      - ../../env_vals:/workspace/env_vals:ro
+      - ../../env_vals:/workspace/env_vals
     working_dir: /workspace
     command: sleep infinity
     expose:

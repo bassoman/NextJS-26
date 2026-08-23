@@ -4,6 +4,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
+const ENVIRONMENT = process.env.NEXT_PUBLIC_PAYPAL_ENVIRONMENT || 'sandbox';
+
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -23,9 +25,15 @@ function CheckoutContent() {
 
     console.log(`[Client] Retrieved tracking token: ${token}`);
 
-    
     const scriptId = "paypal-sdk-script";
     let script = document.getElementById(scriptId);
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+
+    if (!clientId) {
+      setError("PayPal client ID is not configured.");
+      setLoading(false);
+      return;
+    }
 
     const initializePayPalButtons = () => {
       if (buttonsRendered.current) return;
@@ -83,21 +91,32 @@ function CheckoutContent() {
     };
 
 
-console.log(`[Client] Initializing PayPal Buttons for tracking token: ${token}`); 
+    console.log(`[Client] Initializing PayPal Buttons for tracking token: ${token}`);
 
-if (!script) {
-  script = document.createElement("script");
-  
-  // ✅ FIXED: Added the complete /sdk/js path and the missing '$' for the variable injection
-  script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&currency=USD`;
-  
-  script.id = scriptId;
-  script.async = true;
-  script.onload = initializePayPalButtons;
-  document.body.appendChild(script);
-} else {
-  initializePayPalButtons();
-}
+    if (!script) {
+      script = document.createElement("script");
+
+      const paypalHost = ENVIRONMENT === 'sandbox'
+        ? 'www.sandbox.paypal.com'
+        : 'www.paypal.com';
+      script.src = `https://${paypalHost}/sdk/js?client-id=${clientId}&currency=USD`;
+      script.id = scriptId;
+      script.async = true;
+      script.onload = initializePayPalButtons;
+      script.onerror = () => {
+        setError("PayPal SDK could not be loaded.");
+        setLoading(false);
+      };
+      document.body.appendChild(script);
+    } else if (window.paypal) {
+      initializePayPalButtons();
+    } else {
+      script.addEventListener("load", initializePayPalButtons, { once: true });
+      script.addEventListener("error", () => {
+        setError("PayPal SDK could not be loaded.");
+        setLoading(false);
+      }, { once: true });
+    }
 
   }, [token, router]);
 
