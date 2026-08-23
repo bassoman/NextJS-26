@@ -3,6 +3,15 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+AWS_DIR="/home/vscode/.aws"
+if [[ ! -d "$AWS_DIR" || ! -f "$AWS_DIR/config" ]]; then
+  echo "WARNING: The parent directory must contain aws_creds/config for AWS features to work properly." >&2
+fi
+
+if [[ ! -d "/workspace/env_vals" || ! -f "/workspace/env_vals/.env.local" ]]; then
+  echo "WARNING: The parent directory must contain env_vals/.env.local for the frontend environment to work properly." >&2
+fi
+
 echo "Installing npm workspaces (frontend, backend, backend_paypal)..."
 npm install
 
