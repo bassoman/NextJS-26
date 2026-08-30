@@ -1,0 +1,26 @@
+# Development Dockerfile for Local Coding with Hot Reloading
+FROM node:22-alpine
+
+# Install build dependencies for better-sqlite3 and native tools
+RUN apk add --no-cache libc6-compat python3 make g++ sqlite
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY package.json package-lock.json ./
+COPY frontend/package.json ./frontend/
+
+# Install full dependencies (including devDependencies)
+RUN npm install
+
+WORKDIR /app/frontend
+
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+EXPOSE 3000
+
+# Run Next.js in development mode with Turbopack / Fast Refresh
+CMD ["npm", "run", "dev"]

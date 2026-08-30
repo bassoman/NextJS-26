@@ -1,0 +1,30 @@
+services:
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: carc-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Bind mount repository files so TypeScript/React edits reload instantly
+      - .:/app
+      # Anonymous volumes to prevent container node_modules/.next from being overridden by host
+      - /app/node_modules
+      - /app/frontend/node_modules
+      - /app/frontend/.next
+      # Mount local data directory for sqlite
+      - ./frontend/data:/app/frontend/data
+    env_file:
+      - path: ./env_vals/.env.local
+        required: false
+      - path: ./secrets/paypal/sandbox.env
+        required: false
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_PAYPAL_ENVIRONMENT=sandbox
+      - SQLITE_DATABASE_PATH=/app/frontend/data/carc.db
+      - WATCHPACK_POLLING=true # Ensures file change events trigger inside container mounts

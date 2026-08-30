@@ -8,6 +8,7 @@ const { combinedEnv } = loadEnvConfig(
 );
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   env: {
     NEXT_PUBLIC_PAYPAL_ENVIRONMENT:
       combinedEnv.NEXT_PUBLIC_PAYPAL_ENVIRONMENT || "sandbox",

@@ -1,0 +1,57 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: carc-frontend:latest
+    container_name: carc-frontend
+    restart: unless-stopped
+    expose:
+      - "3000"
+    volumes:
+      # Persistent host directory mount for SQLite database on Lightsail VPS
+      - ${CARC_DATA_DIR:-/var/carc/data}:/app/data:rw
+    env_file:
+      # Production SSM parameter values generated on the Lightsail VPS
+      - path: /etc/carc/production.env
+        required: false
+      # Fallback for local testing / dev environment
+      - path: ./env_vals/.env.local
+        required: false
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - HOSTNAME=0.0.0.0
+      - SQLITE_DATABASE_PATH=/app/data/carc.db
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1:3000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: carc-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3 QUIC
+    environment:
+      - DOMAIN_NAME=${DOMAIN_NAME:-coastsidearc.org}
+      - WWW_DOMAIN_NAME=${WWW_DOMAIN_NAME:-www.coastsidearc.org}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@coastsidearc.org}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_started
+
+volumes:
+  caddy_data:
+    name: carc_caddy_data
+  caddy_config:
+    name: carc_caddy_config
