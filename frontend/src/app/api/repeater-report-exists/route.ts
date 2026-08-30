@@ -11,6 +11,32 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
+    const year = searchParams.get("year");
+    const month = searchParams.get("month");
+
+    if (year && month) {
+      const reportUrl = `https://audio.stickerburr.net/files/${month}_${year}/index.html`;
+      let exists = false;
+      try {
+        const headRes = await fetch(reportUrl, {
+          method: "HEAD",
+          signal: AbortSignal.timeout(2000),
+        });
+        exists = headRes.ok;
+      } catch {
+        exists = false;
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          exists,
+          url: reportUrl,
+        },
+        { status: 200 }
+      );
+    }
+
     const callsign = searchParams
       .get("callsign")
       ?.trim()
@@ -21,7 +47,7 @@ export async function GET(request: NextRequest) {
     if (!callsign) {
       return NextResponse.json(
         {
-          error: "Missing required 'callsign' tracking parameter",
+          error: "Missing required query parameter: 'callsign' or 'year' & 'month'",
         },
         { status: 400 }
       );

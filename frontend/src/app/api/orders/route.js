@@ -60,6 +60,7 @@ export async function POST(request) {
       process.env.PAYPAL_BASE_URL?.trim() ||
       "https://api-m.sandbox.paypal.com";
     const verifiedPrice = parseFloat(row.pp_total).toFixed(2);
+    const origin = request.nextUrl.origin || "http://localhost:3000";
 
     const accessToken = await generateAccessToken();
     const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
@@ -79,6 +80,10 @@ export async function POST(request) {
             },
           },
         ],
+        application_context: {
+          return_url: `${origin}/paypal-success`,
+          cancel_url: `${origin}/paypal-cancel`,
+        },
       }),
     });
     const rawText = await response.text();

@@ -13,7 +13,7 @@ const Footer = () => {
 
   return (
     <footer className="bg-gray-500 text-white p-4 text-center mt-auto">
-      <p>&copy; {new Date().getFullYear()} CoastsideARC. All rights reserved.</p>
+      <p suppressHydrationWarning>&copy; {new Date().getFullYear()} CoastsideARC. All rights reserved.</p>
       {lastModified && (
         <p className="text-sm mt-1 italic">
           Page last modified: {lastModified}

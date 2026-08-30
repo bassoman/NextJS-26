@@ -13,8 +13,9 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function YearNewslettersPage({ params }) {
-  const { year } = params; // Extract the year from the URL parameters
+export default async function YearNewslettersPage({ params }) {
+  const resolvedParams = await params;
+  const { year } = resolvedParams; // Extract the year from the URL parameters
 
   // Get newsletters for the specific year
   const newslettersForYear = newslettersData[year];
@@ -53,10 +54,11 @@ export default function YearNewslettersPage({ params }) {
           <p className="text-gray-600 italic">No newsletters available for {year}.</p>
         )}
         <div className="mt-8 text-center">
-          <Link href="/CARC_Newsletter" passHref>
-            <span className="inline-block bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-150 cursor-pointer font-medium">
-              &larr; Back to All Newsletters
-            </span>
+          <Link
+            href="/newsletter"
+            className="inline-block bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition duration-150 font-medium"
+          >
+            &larr; Back to All Newsletters
           </Link>
         </div>
       </section>

@@ -39,30 +39,16 @@ const FULL_NAME_API_URL = 'http://localhost:3000/api/getFullName'; // Example: /
 const RECEPTOR_API_URL = 'http://localhost:3000/api/submitDues'; // Example: /api/submitDues.js
 
 function CarcPayPalDues() {
+  const currentYear = new Date().getFullYear();
+
   const [selectedYears, setSelectedYears] = useState(() => {
-    const currentYear = new Date().getFullYear();
-    // Initialize with the current year checked by default, or an empty set
     return new Set([currentYear]);
   });
   const [isNewMember, setIsNewMember] = useState(false);
   const [callsigns, setCallsigns] = useState('');
   const [donation, setDonation] = useState(0.00);
   const [includePaypalFee, setIncludePaypalFee] = useState(false);
-
-  // Calculated values
-  const [numCheckedYears, setNumCheckedYears] = useState(0);
-  const [proRataFactor, setProRataFactor] = useState(0);
-  const [primaryDues, setPrimaryDues] = useState(0);
-  const [familyDues, setFamilyDues] = useState(0);
-  const [subtotal, setSubtotal] = useState(0);
-  const [paypalFee, setPaypalFee] = useState(0);
-  const [optionalPaypalFee, setOptionalPaypalFee] = useState(0);
-  const [clubReceives, setClubReceives] = useState(0);
-  const [totalCharges, setTotalCharges] = useState(0);
   const [currentDateTime, setCurrentDateTime] = useState('');
-
-  // Derived state for backend submission
-  const [formData, setFormData] = useState({});
 
   // Helper to format currency
   const formatDollars = (amount) => {
@@ -82,18 +68,10 @@ function CarcPayPalDues() {
     return `${now.getFullYear()}-${num2(now.getMonth() + 1)}-${num2(now.getDate())} ${num2(now.getHours())}:${num2(now.getMinutes())}:${num2(now.getSeconds())}`;
   }, []);
 
-  // Function to get pro-rata factor
-  const getProRata = useCallback(() => {
-    const d = new Date();
-    const month = d.getMonth(); // 0-indexed
-    return (12 - month);
-  }, []);
-
-  // Effect to update pro-rata factor and current date/time on component mount
+  // Update current date/time on component mount
   useEffect(() => {
-    setProRataFactor(getProRata());
     setCurrentDateTime(getDate());
-  }, [getProRata, getDate]);
+  }, [getDate]);
 
   // Handle year checkbox changes
   const handleYearChange = (year) => {
@@ -115,13 +93,8 @@ function CarcPayPalDues() {
 
   // Handle callsigns input change
   const handleCallsignsChange = (e) => {
-    // 1. Convert to uppercase first
     const upper = e.target.value.toUpperCase();
-
-    // 2. Replace commas and multiple consecutive spaces with a single space.
-    // Note: We removed .trim() so trailing spaces survive while typing!
     const cleanValue = upper.replace(/[,\s]+/g, " ");
-
     setCallsigns(cleanValue);
   };
 
@@ -135,79 +108,65 @@ function CarcPayPalDues() {
     setIncludePaypalFee(e.target.checked);
   };
 
-  // Main calculation logic, runs whenever relevant state changes
-  useEffect(() => {
-    const calculatedNumYears = selectedYears.size;
-    setNumCheckedYears(calculatedNumYears);
+  // Derived calculations (synchronous during render for consistent SSR and client hydration)
+  const numCheckedYears = selectedYears.size;
+  const proRataFactor = 12 - new Date().getMonth(); // 0-indexed month: Jan=12, Dec=1
 
-    let currentYearDues = 0;
-    let fullYearsCount = calculatedNumYears;
+  let currentYearDues = 0;
+  let fullYearsCount = numCheckedYears;
 
-    // Apply pro-rata for new members checking the current year
-    const currentYear = new Date().getFullYear();
-    if (selectedYears.has(currentYear) && isNewMember) {
-      fullYearsCount = calculatedNumYears - 1;
-      currentYearDues = (proRataFactor / 12.0) * YEARLY_DUES;
-    }
+  if (selectedYears.has(currentYear) && isNewMember) {
+    fullYearsCount = numCheckedYears - 1;
+    currentYearDues = (proRataFactor / 12.0) * YEARLY_DUES;
+  }
 
-    const calculatedPrimary = (fullYearsCount * YEARLY_DUES) + currentYearDues;
-    setPrimaryDues(calculatedPrimary);
+  const primaryDues = (fullYearsCount * YEARLY_DUES) + currentYearDues;
 
-    const arrCallsigns = callsigns.split(' ').filter(c => c !== '');
-    const Ncallsigns = arrCallsigns.length;
-    let calculatedFamily = 0;
-    if (Ncallsigns > 1) {
-      calculatedFamily = (Ncallsigns - 1) * ADDITIONAL_MEMBER_FEE * calculatedNumYears;
-    }
-    setFamilyDues(calculatedFamily);
+  const arrCallsigns = callsigns.split(' ').filter(c => c !== '');
+  const Ncallsigns = arrCallsigns.length;
+  let familyDues = 0;
+  if (Ncallsigns > 1) {
+    familyDues = (Ncallsigns - 1) * ADDITIONAL_MEMBER_FEE * numCheckedYears;
+  }
 
-    const calculatedSubtotal = calculatedPrimary + calculatedFamily + donation;
-    setSubtotal(calculatedSubtotal);
+  const subtotal = primaryDues + familyDues + donation;
 
-    let calculatedPaypalFee = 0;
-    let calculatedOptionalPaypalFee = 0;
-    let calculatedTotal = 0;
-    let calculatedClubReceives = 0;
+  let paypalFee = 0;
+  let optionalPaypalFee = 0;
+  let totalCharges = 0;
+  let clubReceives = 0;
 
-    if (includePaypalFee) {
-      calculatedClubReceives = roundoff(calculatedSubtotal, 2);
-      calculatedTotal = roundoff((calculatedClubReceives + PAYPAL_FIXED_FEE) / (1.0 - PAYPAL_PERCENTAGE), 2);
-      calculatedOptionalPaypalFee = roundoff(calculatedTotal - calculatedClubReceives, 2);
-      calculatedPaypalFee = calculatedOptionalPaypalFee;
-    } else {
-      calculatedPaypalFee = roundoff(calculatedSubtotal * PAYPAL_PERCENTAGE + PAYPAL_FIXED_FEE, 2);
-      calculatedClubReceives = roundoff(calculatedSubtotal - calculatedPaypalFee, 2);
-      calculatedTotal = roundoff(calculatedPaypalFee + calculatedClubReceives, 2);
-      calculatedOptionalPaypalFee = roundoff(0.00, 2);
-    }
+  if (includePaypalFee) {
+    clubReceives = roundoff(subtotal, 2);
+    totalCharges = roundoff((clubReceives + PAYPAL_FIXED_FEE) / (1.0 - PAYPAL_PERCENTAGE), 2);
+    optionalPaypalFee = roundoff(totalCharges - clubReceives, 2);
+    paypalFee = optionalPaypalFee;
+  } else {
+    paypalFee = roundoff(subtotal * PAYPAL_PERCENTAGE + PAYPAL_FIXED_FEE, 2);
+    clubReceives = roundoff(subtotal - paypalFee, 2);
+    totalCharges = roundoff(paypalFee + clubReceives, 2);
+    optionalPaypalFee = roundoff(0.00, 2);
+  }
 
-    setPaypalFee(calculatedPaypalFee);
-    setOptionalPaypalFee(calculatedOptionalPaypalFee);
-    setClubReceives(calculatedClubReceives);
-    setTotalCharges(calculatedTotal);
-
-    // Prepare data for submission
-    setFormData({
-      years: Array.from(selectedYears).sort().join(' '),
-      newmember: isNewMember ? 'yes' : 'no',
-      callsigns: callsigns,
-      ncallsigns: Ncallsigns,
-      callsign: arrCallsigns[0] || '', // Primary callsign
-      primary: calculatedPrimary,
-      family: calculatedFamily,
-      donation: donation,
-      subtotal: calculatedSubtotal,
-      pay_paypal: includePaypalFee ? 'yes' : 'no',
-      paypalfee: calculatedPaypalFee,
-      clubreceives: calculatedClubReceives,
-      total: calculatedTotal,
-      pp_total: calculatedTotal,
-      date: currentDateTime,
-      transaction_status: 'pending',
-    });
-
-  }, [selectedYears, isNewMember, callsigns, donation,
-    includePaypalFee, proRataFactor, currentDateTime]);
+  // Prepared data for backend submission
+  const formData = {
+    years: Array.from(selectedYears).sort().join(' '),
+    newmember: isNewMember ? 'yes' : 'no',
+    callsigns: callsigns,
+    ncallsigns: Ncallsigns,
+    callsign: arrCallsigns[0] || '', // Primary callsign
+    primary: primaryDues,
+    family: familyDues,
+    donation: donation,
+    subtotal: subtotal,
+    pay_paypal: includePaypalFee ? 'yes' : 'no',
+    paypalfee: paypalFee,
+    clubreceives: clubReceives,
+    total: totalCharges,
+    pp_total: totalCharges,
+    date: currentDateTime,
+    transaction_status: 'pending',
+  };
 
 
   // Asynchronous API calls
@@ -313,7 +272,6 @@ function CarcPayPalDues() {
 
   };
 
-  const currentYear = new Date().getFullYear();
   const yearsToDisplay = Array.from({ length: 4 }, (_, i) => currentYear + i); // 2026, 2027, 2028, 2029
 
   return (
@@ -400,7 +358,7 @@ function CarcPayPalDues() {
         {/* Display Fields */}
         <div className="grid grid-cols-2 gap-y-3 gap-x-4 bg-gray-50 p-4 rounded-lg">
           <div className="text-gray-700 font-medium">Server Time:</div>
-          <div className="text-right font-mono text-gray-900">{currentDateTime}</div>
+          <div className="text-right font-mono text-gray-900" suppressHydrationWarning>{currentDateTime}</div>
 
           <div className="text-gray-700 font-medium">Pro Rata Factor:</div>
           <div className="text-right font-mono text-gray-900">{proRataFactor} months</div>

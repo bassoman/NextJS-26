@@ -46,14 +46,22 @@ export default function CARCRepeaterUsage() {
       const checks = reportsToVerify.map(async (report) => {
         try {
           const response = await fetch(`${REPEATER_REPORT_CHECK_API_URL}?year=${report.year}&month=${report.month}`);
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          if (response.ok) {
+            const data = await response.json();
+            return { ...report, exists: data.exists, url: data.url };
           }
-          const data = await response.json();
-          return { ...report, exists: data.exists, url: data.url };
+          return {
+            ...report,
+            exists: false,
+            url: `https://audio.stickerburr.net/files/${report.month}_${report.year}/index.html`,
+          };
         } catch (err) {
           console.error(`Failed to verify report for ${report.monthName} ${report.year}:`, err);
-          return { ...report, exists: false, url: `https://audio.stickerburr.net/files/${report.month}_${report.year}/index.html` }; // Provide fallback URL
+          return {
+            ...report,
+            exists: false,
+            url: `https://audio.stickerburr.net/files/${report.month}_${report.year}/index.html`,
+          };
         }
       });
 

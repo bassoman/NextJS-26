@@ -70,10 +70,12 @@ export default function CARCNewslettersIndex() {
         {previousYears.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {previousYears.map(year => (
-              <Link key={year} href={`/newsletter/${year}`} passHref>
-                <span className="block text-center bg-green-600 text-white py-3 px-2 rounded-md hover:bg-green-700 transition duration-150 cursor-pointer shadow-md">
-                  {year}
-                </span>
+              <Link
+                key={year}
+                href={`/newsletter/${year}`}
+                className="block text-center bg-green-600 text-white py-3 px-2 rounded-md hover:bg-green-700 transition duration-150 shadow-md"
+              >
+                {year}
               </Link>
             ))}
           </div>

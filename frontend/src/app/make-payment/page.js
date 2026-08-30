@@ -73,12 +73,35 @@ function CheckoutContent() {
             });
             if (!res.ok) throw new Error("Backend network error during transaction capture.");
 
-            // Redirect smoothly to your success route
-            router.push("/paypal-success");
+            const captureData = await res.json();
+
+            if (captureData.status === "COMPLETED") {
+              router.push("/paypal-success");
+            } else {
+              console.warn("PayPal capture did not complete:", captureData);
+              router.push("/paypal-cancel");
+            }
           } catch (err) {
             console.error(err);
             alert("Payment capture failed. Your bank statement has not been billed.");
           }
+        },
+
+        onCancel: async (data) => {
+          console.log("[PayPal Client] Payment cancelled by user:", data);
+          try {
+            await fetch("/api/orders/cancel", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderID: data?.orderID,
+                trackingToken: token,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to update cancel status:", err);
+          }
+          router.push("/paypal-cancel");
         },
 
         onError: (err) => {
