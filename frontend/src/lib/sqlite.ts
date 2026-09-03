@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import fs from "fs";
 import path from "path";
 
 type SqliteDatabase = Database.Database;
@@ -56,6 +57,7 @@ export function getDatabase(): SqliteDatabase {
         process.env.SQLITE_DATABASE_PATH ||
         path.join(process.cwd(), "data", "carc.db");
 
+      fs.mkdirSync(path.dirname(dbPath), { recursive: true });
       database = new Database(dbPath);
       database.pragma("journal_mode = WAL");
     }

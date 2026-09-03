@@ -20,6 +20,9 @@ services:
         required: false
     environment:
       - CARC_ENVIRONMENT=${CARC_ENVIRONMENT:-prod}
+      # Deliberately not read from env_file; pass only from the launch command:
+      # CARC_CLEAR_TRANSACTIONS=1 docker compose up -d
+      - CARC_CLEAR_TRANSACTIONS
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0

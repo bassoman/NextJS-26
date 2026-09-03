@@ -256,6 +256,29 @@ CARC_ENVIRONMENT=sandbox docker compose ps
 ```
 Switch back to production by using `CARC_ENVIRONMENT=prod` in each command. The application container reads the PayPal client ID at runtime from the selected env file, so a rebuild is not required just to change credentials.
 
+### Initializing Both Environment Databases
+The repository includes `frontend/data/carc.db` as the source database. The initialization script uses SQLite's `.backup` operation, which safely includes WAL contents, and replaces both target database files. Stop the application first and make backups before running it:
+```bash
+cd /home/ubuntu/carc-web
+CARC_DB_FILE=/var/carc/prod/data/carc.db \
+  CARC_BACKUP_DIR=/var/carc/backups/hourly/prod \
+  ./frontend/scripts/backup-sqlite.sh
+
+sudo ./deployment/scripts/initialize-databases.sh
+```
+The targets are `/var/carc/prod/data/carc.db` and `/var/carc/sandbox/data/carc.db`. Override them with `CARC_PROD_DB`, `CARC_SANDBOX_DB`, or `CARC_SOURCE_DB` when necessary.
+
+### Clearing Transactions for a Test
+`CARC_CLEAR_TRANSACTIONS` is intentionally not stored in SSM or either environment file. To clear all rows from the `pp_tnx` table in the selected database, stop the current app and pass the variable only on the command that starts it:
+```bash
+CARC_ENVIRONMENT=sandbox CARC_CLEAR_TRANSACTIONS=1 docker compose up -d
+```
+Use `CARC_ENVIRONMENT=prod` only when you deliberately intend to clear production transactions. The entrypoint clears transactions before starting Next.js and then the variable is absent from normal launches:
+```bash
+CARC_ENVIRONMENT=sandbox docker compose up -d
+```
+The clearing operation does not remove member or other reference data. Verify the selected environment and database backup before using it.
+
 ---
 
 ## 6. Automated SQLite Backups

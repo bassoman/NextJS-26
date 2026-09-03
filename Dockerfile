@@ -53,6 +53,8 @@ COPY --from=builder /app/frontend/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./frontend/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/frontend/.next/static ./.next/static
+COPY --chown=nextjs:nodejs deployment/scripts/container-entrypoint.sh /usr/local/bin/carc-entrypoint.sh
+RUN chmod 755 /usr/local/bin/carc-entrypoint.sh
 
 USER nextjs
 
@@ -61,4 +63,4 @@ EXPOSE 3000
 VOLUME ["/app/data"]
 
 # Entrypoint detects standalone server location in root or workspace subfolder
-CMD ["sh", "-c", "if [ -f server.js ]; then node server.js; elif [ -f frontend/server.js ]; then node frontend/server.js; else node .next/standalone/frontend/server.js; fi"]
+CMD ["/usr/local/bin/carc-entrypoint.sh"]
