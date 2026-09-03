@@ -2,14 +2,23 @@
 # ==============================================================================
 # fetch-ssm-params.sh
 # Retrieves configuration and credentials from AWS SSM Parameter Store
-# and exports them to a secure production environment file (/etc/carc/production.env).
+# and exports them to a secure environment file under /etc/carc.
 # ==============================================================================
 
 set -Eeuo pipefail
 umask 077
 
-SSM_PATH="${CARC_SSM_PATH:-/carc/prod}"
-TARGET_ENV_FILE="${CARC_TARGET_ENV_FILE:-/etc/carc/production.env}"
+CARC_ENVIRONMENT="${CARC_ENVIRONMENT:-prod}"
+case "$CARC_ENVIRONMENT" in
+    prod|sandbox) ;;
+    *)
+        echo "ERROR: CARC_ENVIRONMENT must be 'prod' or 'sandbox'." >&2
+        exit 1
+        ;;
+esac
+
+SSM_PATH="${CARC_SSM_PATH:-/carc/${CARC_ENVIRONMENT}}"
+TARGET_ENV_FILE="${CARC_TARGET_ENV_FILE:-/etc/carc/${CARC_ENVIRONMENT}.env}"
 TARGET_ENV_DIR="$(dirname "$TARGET_ENV_FILE")"
 AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}"
 
@@ -30,7 +39,7 @@ cleanup() {
 trap cleanup EXIT
 
 # Fetch all parameters recursively under the path with decryption
-# Formats parameter name /carc/prod/FOO -> FOO=Value
+# Formats parameter name /carc/{environment}/FOO -> FOO=Value
 aws ssm get-parameters-by-path \
     --path "$SSM_PATH" \
     --recursive \
@@ -51,9 +60,14 @@ if [[ ! -s "$TEMP_ENV_FILE" ]]; then
     exit 1
 fi
 
-# Ensure default database path is set if not provided by SSM
+# Each environment has its own host data directory via Docker Compose. Keep the
+# path inside the container stable so application code does not vary by target.
 if ! grep -q "^SQLITE_DATABASE_PATH=" "$TEMP_ENV_FILE"; then
     echo "SQLITE_DATABASE_PATH=/app/data/carc.db" >> "$TEMP_ENV_FILE"
+fi
+
+if ! grep -q "^NEXT_PUBLIC_PAYPAL_ENVIRONMENT=" "$TEMP_ENV_FILE"; then
+    echo "NEXT_PUBLIC_PAYPAL_ENVIRONMENT=$([[ "$CARC_ENVIRONMENT" == "sandbox" ]] && echo sandbox || echo live)" >> "$TEMP_ENV_FILE"
 fi
 
 # Atomic replace and set secure permissions

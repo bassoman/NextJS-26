@@ -10,15 +10,16 @@ services:
       - "3000"
     volumes:
       # Persistent host directory mount for SQLite database on Lightsail VPS
-      - ${CARC_DATA_DIR:-/var/carc/data}:/app/data:rw
+      - ${CARC_DATA_DIR:-/var/carc/${CARC_ENVIRONMENT:-prod}/data}:/app/data:rw
     env_file:
-      # Production SSM parameter values generated on the Lightsail VPS
-      - path: /etc/carc/production.env
+      # SSM values generated for the selected environment on the Lightsail VPS
+      - path: /etc/carc/${CARC_ENVIRONMENT:-prod}.env
         required: false
       # Fallback for local testing / dev environment
       - path: ./env_vals/.env.local
         required: false
     environment:
+      - CARC_ENVIRONMENT=${CARC_ENVIRONMENT:-prod}
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
