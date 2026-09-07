@@ -26,6 +26,7 @@
 
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { withBasePath } from '@/lib/basePath';
 
 // Constants for calculations
 const PAYPAL_FIXED_FEE = 0.49;
@@ -236,7 +237,7 @@ function CarcPayPalDues() {
       // 2. Fire the database persistence execution directly
       console.log("DEBUG - What the frontend is sending to /api/submitDues:", dataToSend);
 
-      const response = await fetch("/api/submitDues", {
+      const response = await fetch(withBasePath("/api/submitDues"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dataToSend),

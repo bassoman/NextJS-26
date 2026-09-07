@@ -61,6 +61,9 @@ export async function POST(request) {
       "https://api-m.sandbox.paypal.com";
     const verifiedPrice = parseFloat(row.pp_total).toFixed(2);
     const origin = request.nextUrl.origin || "http://localhost:3000";
+    // The public-facing path prefix under which the app is served (e.g. "/carc").
+    // request.nextUrl.origin has no path, so PayPal return/cancel URLs must add it.
+    const appBasePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
     const accessToken = await generateAccessToken();
     const response = await fetch(`${baseUrl}/v2/checkout/orders`, {
@@ -81,8 +84,8 @@ export async function POST(request) {
           },
         ],
         application_context: {
-          return_url: `${origin}/paypal-success`,
-          cancel_url: `${origin}/paypal-cancel`,
+          return_url: `${origin}${appBasePath}/paypal-success`,
+          cancel_url: `${origin}${appBasePath}/paypal-cancel`,
         },
       }),
     });

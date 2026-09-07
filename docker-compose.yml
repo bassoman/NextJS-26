@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Baked into the Next.js build; must match the public path prefix.
+        NEXT_BASE_PATH: ${BASE_PATH:-}
     image: carc-frontend:latest
     container_name: carc-frontend
     restart: unless-stopped
@@ -20,6 +23,8 @@ services:
         required: false
     environment:
       - CARC_ENVIRONMENT=${CARC_ENVIRONMENT:-prod}
+      # Public path prefix used for PayPal return/cancel URLs (e.g. "/carc").
+      - NEXT_PUBLIC_BASE_PATH=${BASE_PATH:-}
       # Deliberately not read from env_file; pass only from the launch command:
       # CARC_CLEAR_TRANSACTIONS=1 docker compose up -d
       - CARC_CLEAR_TRANSACTIONS
@@ -46,6 +51,7 @@ services:
       - DOMAIN_NAME=${DOMAIN_NAME:-coastsidearc.org}
       - WWW_DOMAIN_NAME=${WWW_DOMAIN_NAME:-www.coastsidearc.org}
       - ACME_EMAIL=${ACME_EMAIL:-admin@coastsidearc.org}
+      - BASE_PATH=${BASE_PATH:-}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

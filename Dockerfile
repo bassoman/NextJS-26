@@ -24,6 +24,9 @@ COPY frontend/ ./frontend/
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Optional sub-path prefix baked into the build (e.g. "/carc"); empty = root (prod).
+ARG NEXT_BASE_PATH=""
+ENV NEXT_BASE_PATH=$NEXT_BASE_PATH
 
 # Build standalone Next.js bundle
 RUN npm run build --workspace=frontend

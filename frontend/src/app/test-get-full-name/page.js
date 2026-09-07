@@ -3,6 +3,7 @@
 
 import Link from 'next/link';
 import React, { useState } from 'react';
+import { withBasePath } from '@/lib/basePath';
 
 export default function TestGetFullNamePage() {
   const [resultsMatrix, setResultsMatrix] = useState({});
@@ -46,7 +47,7 @@ export default function TestGetFullNamePage() {
 
     try {
       // Fire exactly ONE network request containing the whole list
-      const response = await fetch("/api/getFullName", {
+      const response = await fetch(withBasePath("/api/getFullName"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ callsigns: testCallsigns }),

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { withBasePath } from "@/lib/basePath";
 
 export const metadata = {
   title: "CARC Home Page",
@@ -95,7 +96,7 @@ export default function CARCHomePage() {
             Please download and complete a{" "}
             <a
               target="_blank"
-              href="/documents/CARC_MembershipForm.pdf"
+              href={withBasePath("/documents/CARC_MembershipForm.pdf")}
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline font-medium"
             >

@@ -8,12 +8,15 @@
     # Encode responses with gzip and zstd
     encode zstd gzip
 
-    # Reverse proxy to the Next.js container
-    reverse_proxy app:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
+    # Serve the app under an optional path prefix (e.g. "/carc"). Empty = root (prod).
+    # The prefix is NOT stripped: Next.js has the same prefix baked in via basePath.
+    handle {$BASE_PATH:}* {
+        reverse_proxy app:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
     # Security headers

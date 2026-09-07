@@ -3,6 +3,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
+import { withBasePath } from '@/lib/basePath';
 
 function CheckoutContent() {
   const searchParams = useSearchParams();
@@ -41,7 +42,7 @@ function CheckoutContent() {
         // Call your brand new Next.js Serverless Order Creation API
         createOrder: async () => {
           try {
-            const res = await fetch("/api/orders", {
+            const res = await fetch(withBasePath("/api/orders"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ trackingToken: token }),
@@ -58,7 +59,7 @@ function CheckoutContent() {
         // Call your brand new Next.js Serverless Order Capture API on Approval
         onApprove: async (data) => {
           try {
-            const res = await fetch(`/api/orders/${data.orderID}/capture`, {
+            const res = await fetch(withBasePath(`/api/orders/${data.orderID}/capture`), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
             });
@@ -67,10 +68,10 @@ function CheckoutContent() {
             const captureData = await res.json();
 
             if (captureData.status === "COMPLETED") {
-              router.push("/paypal-success");
+              router.push(withBasePath("/paypal-success"));
             } else {
               console.warn("PayPal capture did not complete:", captureData);
-              router.push("/paypal-cancel");
+              router.push(withBasePath("/paypal-cancel"));
             }
           } catch (err) {
             console.error(err);
@@ -81,7 +82,7 @@ function CheckoutContent() {
         onCancel: async (data) => {
           console.log("[PayPal Client] Payment cancelled by user:", data);
           try {
-            await fetch("/api/orders/cancel", {
+            await fetch(withBasePath("/api/orders/cancel"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -92,7 +93,7 @@ function CheckoutContent() {
           } catch (err) {
             console.error("Failed to update cancel status:", err);
           }
-          router.push("/paypal-cancel");
+          router.push(withBasePath("/paypal-cancel"));
         },
 
         onError: (err) => {
@@ -106,7 +107,7 @@ function CheckoutContent() {
 
 
     const loadPayPal = async () => {
-      const configResponse = await fetch("/api/paypal-config");
+      const configResponse = await fetch(withBasePath("/api/paypal-config"));
       if (!configResponse.ok) {
         throw new Error("PayPal client ID is not configured.");
       }

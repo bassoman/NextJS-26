@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { withBasePath } from '@/lib/basePath';
 
 // --- Data for Net Control Assignments ---
 const netControlRosterData = {
@@ -161,7 +162,7 @@ export default function CARCNetControlRoster() {
           146.925 MHz repeater (PL 114.8 Hz).
           This roster is for informational purposes and subject to change.
           Please check the{' '}
-          <a href="/CARC_Coming_Events" className="text-blue-600 hover:underline">
+          <a href={withBasePath("/CARC_Coming_Events")} className="text-blue-600 hover:underline">
             Coming Events
           </a>{' '}
           page for specific meeting dates or changes.
