@@ -160,11 +160,15 @@ The PayPal JavaScript SDK and Live REST APIs strictly require valid HTTPS/TLS ce
 {$DOMAIN_NAME:coastsidearc.org}, {$WWW_DOMAIN_NAME:www.coastsidearc.org} {
     encode zstd gzip
 
-    reverse_proxy app:3000 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up X-Forwarded-For {remote_host}
-        header_up X-Forwarded-Proto {scheme}
+    # Optional sub-path prefix (e.g. "/carc"). Empty = root (prod).
+    # The prefix is NOT stripped: Next.js bakes the same prefix in via basePath.
+    handle {$BASE_PATH:}* {
+        reverse_proxy app:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
     }
 
     header {
@@ -180,6 +184,30 @@ The PayPal JavaScript SDK and Live REST APIs strictly require valid HTTPS/TLS ce
     }
 }
 ```
+
+### Optional Sub-Path Hosting (e.g. demo/test domain)
+
+The app can be served under a URL prefix such as `https://demos.vallemarlabs.com/carc` instead of at the domain root. This is controlled by a single variable, `BASE_PATH`:
+
+| Where | Name | Purpose |
+| :--- | :--- | :--- |
+| Caddy (runtime) | `BASE_PATH` | Which path prefix the proxy routes to the app. Empty = root. |
+| Next.js (**build-time**) | `NEXT_BASE_PATH` | Bakes the prefix into the bundle via `basePath` in [frontend/next.config.ts](frontend/next.config.ts). Passed as a Docker `--build-arg`. |
+| App (runtime) | `NEXT_PUBLIC_BASE_PATH` | Used for browser-facing URLs that bypass `next/link`: PayPal `return_url`/`cancel_url` in [api/orders/route.js](frontend/src/app/api/orders/route.js), and client `fetch()`/`router.push()` via [src/lib/basePath.js](frontend/src/lib/basePath.js). |
+
+**Important:** `basePath` is baked in at **build time**, so a prefixed deployment is a *different Docker image* than the root (prod) image. Both use the `carc-frontend:latest` tag, so always rebuild with `--build` when switching, and the tag is overwritten each time.
+
+To deploy under a prefix, set it before launching (e.g. in a `.env` next to [docker-compose.yml](docker-compose.yml)):
+
+```text
+DOMAIN_NAME=demos.vallemarlabs.com
+WWW_DOMAIN_NAME=demos.vallemarlabs.com
+BASE_PATH=/carc
+```
+
+then `docker compose up -d --build`. The app is reachable at `https://demos.vallemarlabs.com/carc`, and PayPal returns to `.../carc/paypal-success`. For production, leave `BASE_PATH` empty (or omit it) to serve at the domain root.
+
+> Note: `next/link` and `next/image` prepend the prefix automatically, but raw `<a href="/...">`, `<img src="/...">`, `fetch("/api/...")`, and `router.push("/...")` do not — those must be wrapped with `withBasePath(...)` from [src/lib/basePath.js](frontend/src/lib/basePath.js).
 
 ---
 
@@ -234,10 +262,13 @@ export DOMAIN_NAME="coastsidearc.org"
 export WWW_DOMAIN_NAME="www.coastsidearc.org"
 export ACME_EMAIL="admin@coastsidearc.org"
 export CARC_ENVIRONMENT="prod"
+export BASE_PATH=""            # empty = serve at domain root; set e.g. "/carc" for a sub-path
 
 # Build and start both Next.js and Caddy
 docker compose up -d --build
 ```
+
+> If you change `BASE_PATH`, the app image must be rebuilt (the Next.js `basePath` is a build-time setting) — always include `--build` after changing it.
 
 Verify running containers:
 ```bash
