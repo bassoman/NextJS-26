@@ -123,13 +123,13 @@ Attach an IAM policy to the AWS credentials used on the Lightsail VPS:
 ```
 
 ### Fetching Secrets on the Lightsail VPS
-Run the included synchronization script:
+Run the included synchronization script(flag -E essential to use creds of user, not root):
 ```bash
 chmod +x deployment/scripts/fetch-ssm-params.sh
-sudo CARC_ENVIRONMENT=prod ./deployment/scripts/fetch-ssm-params.sh
+sudo -E CARC_ENVIRONMENT=prod ./deployment/scripts/fetch-ssm-params.sh
 
 # For sandbox instead:
-sudo CARC_ENVIRONMENT=sandbox ./deployment/scripts/fetch-ssm-params.sh
+sudo -E CARC_ENVIRONMENT=sandbox ./deployment/scripts/fetch-ssm-params.sh
 ```
 This populates `/etc/carc/prod.env` or `/etc/carc/sandbox.env` with restricted permissions (`chmod 600`).
 
