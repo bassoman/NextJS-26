@@ -11,7 +11,7 @@
     "generate-gallery": "node scripts/generate-gallery-data.js"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "13.0.3",
     "exif-parser": "^0.1.12",
     "image-size": "^2.0.2",
     "mysql2": "^3.22.3",

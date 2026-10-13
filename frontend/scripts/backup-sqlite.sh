@@ -4,8 +4,17 @@ set -Eeuo pipefail
 umask 077
 
 APP_DIR="${CARC_APP_DIR:-/home/ubuntu/NextJS-26/frontend}"
-DB_FILE="${CARC_DB_FILE:-${APP_DIR}/data/carc.db}"
-BACKUP_DIR="${CARC_BACKUP_DIR:-${APP_DIR}/backups/hourly}"
+CARC_ENVIRONMENT="${CARC_ENVIRONMENT:-prod}"
+case "$CARC_ENVIRONMENT" in
+    prod|sandbox) ;;
+    *)
+        echo "ERROR: CARC_ENVIRONMENT must be 'prod' or 'sandbox'." >&2
+        exit 1
+        ;;
+esac
+
+DB_FILE="${CARC_DB_FILE:-${SQLITE_DATABASE_PATH:-/var/carc/${CARC_ENVIRONMENT}/data/carc.db}}"
+BACKUP_DIR="${CARC_BACKUP_DIR:-/var/carc/${CARC_ENVIRONMENT}/backups/hourly}"
 RETENTION_MINUTES="${CARC_RETENTION_MINUTES:-2880}"
 
 if [[ ! -f "$DB_FILE" ]]; then
