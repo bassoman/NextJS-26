@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 AWS_DIR="/home/vscode/.aws"
 if [[ ! -d "$AWS_DIR" || ! -f "$AWS_DIR/config" ]]; then
-  echo "WARNING: The parent directory must contain aws_creds/config for AWS features to work properly." >&2
+  echo "WARNING: The host AWS credentials directory must be mounted at $AWS_DIR and contain config." >&2
 fi
 
 if [[ ! -d "/workspace/env_vals" || ! -f "/workspace/env_vals/.env.local" ]]; then

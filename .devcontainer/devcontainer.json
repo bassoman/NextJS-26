@@ -4,6 +4,9 @@
   "service": "app",
   "workspaceFolder": "/workspace",
   "shutdownAction": "stopCompose",
+  "mounts": [
+    "source=/home/bassoman/.aws,target=/home/vscode/.aws,type=bind,consistency=cached"
+  ],
 
   "features": {
     "ghcr.io/devcontainers/features/git:1": {}
