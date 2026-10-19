@@ -71,14 +71,6 @@ fi
 printf 'SQLITE_DATABASE_PATH=%s\n' "$SQLITE_DATABASE_PATH" >> "$TEMP_ENV_FILE"
 printf 'PORT=%s\n' "$PORT" >> "$TEMP_ENV_FILE"
 
-if ! grep -q "^NEXT_PUBLIC_PAYPAL_ENVIRONMENT=" "$TEMP_ENV_FILE"; then
-    paypal_environment="live"
-    if [[ "$CARC_ENVIRONMENT" == "sandbox" ]]; then
-        paypal_environment="sandbox"
-    fi
-    printf 'NEXT_PUBLIC_PAYPAL_ENVIRONMENT=%s\n' "$paypal_environment" >> "$TEMP_ENV_FILE"
-fi
-
 mv "$TEMP_ENV_FILE" "$TARGET_ENV_FILE"
 chmod 600 "$TARGET_ENV_FILE"
 

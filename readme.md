@@ -39,30 +39,23 @@ Install dependencies and build the frontend using the normal project commands:
 
 ```bash
 npm ci
+npm run build
 ```
 
-`NEXT_PUBLIC_*` values are embedded into the browser bundle at build time.
-Provide the correct public PayPal client ID for the target environment before
-building. For example:
-
-```bash
-NEXT_PUBLIC_PAYPAL_CLIENT_ID="$(aws ssm get-parameter \
-  --name /carc/prod/NEXT_PUBLIC_PAYPAL_CLIENT_ID \
-  --with-decryption --region us-west-2 \
-  --query Parameter.Value --output text)" npm run build
-```
-
-Use `/carc/sandbox/NEXT_PUBLIC_PAYPAL_CLIENT_ID` when building a sandbox
-bundle. The runtime environment file supplies server-side secrets to the app,
-but does not change already-built `NEXT_PUBLIC_*` browser values.
+The PayPal client ID is read at runtime from `PAYPAL_CLIENT_ID` by the
+server-rendered checkout page, so one build serves both production and sandbox;
+switching PayPal environments only needs updated parameters and a restart.
+Do not place a `frontend/.env.local` file on the host, because Next.js would
+load it as a fallback.
 
 ## AWS Systems Manager Parameter Store
 
 Store app configuration under `/carc/prod/` and `/carc/sandbox/`. Provide the
 PayPal server credentials and API URL (`PAYPAL_CLIENT_ID`,
 `PAYPAL_CLIENT_SECRET`, and `PAYPAL_BASE_URL`), plus any other runtime settings
-the app requires. Store `NEXT_PUBLIC_PAYPAL_CLIENT_ID` for build-time use.
-Use the corresponding live or sandbox PayPal credentials and API URL.
+the app requires. Use the corresponding live or sandbox PayPal credentials and
+API URL (`https://api-m.paypal.com` for live,
+`https://api-m.sandbox.paypal.com` for sandbox); all three must match.
 
 Attach an IAM policy to the host's AWS identity that permits
 `ssm:GetParametersByPath` for the relevant `/carc/*` parameters. The AWS CLI
@@ -117,12 +110,11 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now carc-app@prod.service
 ```
 
-Use `carc-app@sandbox.service` to run the sandbox instance instead. A single
-checkout/build should serve only one environment at a time: its public PayPal
-client ID is embedded at build time. To run production and sandbox
-simultaneously, use separate checkouts/builds and service configurations, and
-configure the host reverse proxy to route to production port `3000` and
-sandbox port `3001`. After refreshing SSM values or deploying a new build,
+Use `carc-app@sandbox.service` to run the sandbox instance instead. Both
+instances can run from the same checkout/build, since PayPal settings are read
+from each instance's environment file at runtime. Configure the host reverse
+proxy to route to production port `3000` and sandbox port `3001`. After
+refreshing SSM values or deploying a new build,
 restart the affected service:
 
 ```bash

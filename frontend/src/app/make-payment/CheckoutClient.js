@@ -1,10 +1,10 @@
-// frontend/src/app/make-payment/page.js
+// frontend/src/app/make-payment/CheckoutClient.js
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 
-function CheckoutContent() {
+function CheckoutContent({ clientId }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -17,6 +17,12 @@ function CheckoutContent() {
   useEffect(() => {
     if (!token) {
       setError("Missing required transaction tracking token parameter.");
+      setLoading(false);
+      return;
+    }
+
+    if (!clientId) {
+      setError("PayPal is not configured. Please contact the club.");
       setLoading(false);
       return;
     }
@@ -88,8 +94,7 @@ console.log(`[Client] Initializing PayPal Buttons for tracking token: ${token}`)
 if (!script) {
   script = document.createElement("script");
   
-  // ✅ FIXED: Added the complete /sdk/js path and the missing '$' for the variable injection
-  script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID}&currency=USD`;
+  script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD`;
   
   script.id = scriptId;
   script.async = true;
@@ -99,7 +104,7 @@ if (!script) {
   initializePayPalButtons();
 }
 
-  }, [token, router]);
+  }, [token, router, clientId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -126,10 +131,10 @@ if (!script) {
 }
 
 // Next.js requires useSearchParams hooks to be wrapped in a Suspense boundary
-export default function MakePaymentPage() {
+export default function CheckoutClient({ clientId }) {
   return (
     <Suspense fallback={<div className="text-center p-12">Loading Workspace...</div>}>
-      <CheckoutContent />
+      <CheckoutContent clientId={clientId} />
     </Suspense>
   );
 }
