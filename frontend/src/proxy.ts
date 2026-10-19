@@ -4,6 +4,12 @@ import { NextResponse } from "next/server";
 
 export default function proxy(request: NextRequest) {
   const authorization = request.headers.get("authorization");
+  const expectedUsername =
+    process.env.ADMIN_DIAGNOSTIC_USER ??
+    process.env.PROTECTED_PAGE_USERNAME;
+  const expectedPassword =
+    process.env.ADMIN_DIAGNOSTIC_PASS ??
+    process.env.PROTECTED_PAGE_PASSWORD;
 
   if (authorization) {
     const [scheme, encodedCredentials] = authorization.split(" ");
@@ -21,8 +27,8 @@ export default function proxy(request: NextRequest) {
         const password = decodedCredentials.slice(separatorPosition + 1);
 
         if (
-          username === process.env.PROTECTED_PAGE_USERNAME &&
-          password === process.env.PROTECTED_PAGE_PASSWORD
+          username === expectedUsername &&
+          password === expectedPassword
         ) {
           return NextResponse.next();
         }
@@ -47,4 +53,3 @@ export const config = {
     "/members/:path*",
   ],
 };
-

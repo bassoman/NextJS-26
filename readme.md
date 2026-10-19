@@ -64,6 +64,35 @@ defaults to `us-west-2`; override `AWS_REGION` if the parameters are elsewhere.
 If SecureString parameters use a customer-managed KMS key, the host identity
 also needs permission to decrypt with that key.
 
+### Required Parameters
+Create the following parameters under both `/carc/prod/` and `/carc/sandbox/` in SSM Parameter Store (e.g., in region `us-west-2`). Use live PayPal credentials and `https://api-m.paypal.com` for prod; use sandbox credentials and `https://api-m.sandbox.paypal.com` for sandbox.
+
+| Parameter Name | Type | Value / Description |
+| :--- | :--- | :--- |
+| `/carc/{environment}/PAYPAL_CLIENT_ID` | `SecureString` | Matching PayPal REST client ID |
+| `/carc/{environment}/PAYPAL_CLIENT_SECRET` | `SecureString` | Matching PayPal REST client secret |
+| `/carc/{environment}/PAYPAL_BASE_URL` | `String` | Live or sandbox PayPal API URL |
+| `/carc/{environment}/NEXT_PUBLIC_PAYPAL_CLIENT_ID` | `String` | Matching public client ID for Smart Buttons |
+| `/carc/{environment}/NEXT_PUBLIC_PAYPAL_ENVIRONMENT` | `String` | `live` for prod, `sandbox` for sandbox |
+| `/carc/{environment}/CARC_DATABASE_MODE` | `String` | `live` |
+| `/carc/{environment}/SQLITE_DATABASE_PATH` | `String` | `/app/data/carc.db` |
+| `/carc/{environment}/SUCCESS_URL` | `String` | `https://localhost:3000/paypal-success` |
+| `/carc/{environment}/CANCEL_URL` | `String` | `https://localhost:3000/paypal-cancel` |
+| `/carc/{environment}/ADMIN_DIAGNOSTIC_USER` | `String` | `carc` |
+| `/carc/{environment}/ADMIN_DIAGNOSTIC_PASS` | `String` | `pass` |
+
+### Setting Up Parameters via AWS CLI:
+```bash
+aws ssm put-parameter --name "/carc/sandbox/PAYPAL_CLIENT_ID" --value "YOUR_SANDBOX_CLIENT_ID" --type "SecureString" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/PAYPAL_CLIENT_SECRET" --value "YOUR_SANDBOX_CLIENT_SECRET" --type "SecureString" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/PAYPAL_BASE_URL" --value "https://api-m.sandbox.paypal.com" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/NEXT_PUBLIC_PAYPAL_CLIENT_ID" --value "YOUR_SANDBOX_CLIENT_ID" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/NEXT_PUBLIC_PAYPAL_ENVIRONMENT" --value "sandbox" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/SUCCESS_URL" --value "https://localhost:3000/paypal-success" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/CANCEL_URL" --value "https://localhost:3000/paypal-cancel" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/ADMIN_DIAGNOSTIC_USER" --value "carc" --type "String" --overwrite
+aws ssm put-parameter --name "/carc/sandbox/ADMIN_DIAGNOSTIC_PASS" --value "pass" --type "String" --overwrite
+
 Fetch the selected environment's parameters from the project root:
 
 ```bash
