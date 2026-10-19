@@ -3,14 +3,14 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/sqlite";
 
-// Helper function to generate an access token from PayPal
+// Helper function to generate an access token from PayPal Sandbox
 async function generateAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
 
   const baseUrl =
     process.env.PAYPAL_BASE_URL?.trim() ||
-    "https://api-m.paypal.com";
+    "https://api-m.sandbox.paypal.com";
 
   if (!clientId || !clientSecret) {
     throw new Error(
@@ -64,12 +64,10 @@ export async function POST(request, { params }) {
       `[Serverless API] Capturing PayPal Order ID: ${orderID}`
     );
 
-    const accessToken = await generateAccessToken();
-
     const baseUrl =
       process.env.PAYPAL_BASE_URL?.trim() ||
-      "https://api-m.paypal.com";
-
+      "https://api-m.sandbox.paypal.com";
+    const accessToken = await generateAccessToken();
     const response = await fetch(
       `${baseUrl}/v2/checkout/orders/${orderID}/capture`,
       {
@@ -80,15 +78,12 @@ export async function POST(request, { params }) {
         },
       }
     );
-
     const rawText = await response.text();
-
     if (!rawText || rawText.trim().length === 0) {
       throw new Error(
         `PayPal Server returned an empty response string with status: ${response.status}`
       );
     }
-
     const data = JSON.parse(rawText);
 
     console.log(
