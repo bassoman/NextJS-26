@@ -87,3 +87,6 @@ frontend/backups/
 
 
 frontend/stashed.env.local
+
+# Server nginx config values
+deployment/nginx.env
