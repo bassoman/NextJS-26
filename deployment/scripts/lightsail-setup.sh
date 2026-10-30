@@ -2,6 +2,7 @@
 # One-shot setup for a fresh Ubuntu Lightsail instance.
 # Usage (as the ubuntu user):
 #   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh
+# Optional: APP_DIR (default ~/NextJS-26), WWW_ALIAS=0, see configure-nginx.sh for more.
 # DOMAIN/EMAIL are optional; without them nginx serves plain HTTP on the IP.
 # USE_SSM=1 pulls env values from AWS SSM (/carc/prod/*) instead of prompting.
 # Env file: put your secrets in /etc/carc/prod.env beforehand, or edit it when prompted.
@@ -10,7 +11,7 @@ set -Eeuo pipefail
 DOMAIN="${DOMAIN:-}"
 EMAIL="${EMAIL:-}"
 REPO_URL="${REPO_URL:-https://github.com/bassoman/NextJS-26.git}"
-APP_DIR="$HOME/NextJS-26"
+APP_DIR="${APP_DIR:-$HOME/NextJS-26}"
 PORT=3000
 
 if [[ $EUID -eq 0 ]]; then
@@ -61,6 +62,10 @@ if [[ ! -f /etc/carc/prod.env ]]; then
 fi
 
 echo "==> Building"
+# NEXT_PUBLIC_* values are inlined at build time, so export them from the env file first.
+while IFS= read -r line; do
+    [[ "$line" =~ ^(NEXT_PUBLIC_[A-Za-z0-9_]*)=(.*)$ ]] && export "${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
+done < <(sudo cat /etc/carc/prod.env)
 npm ci
 npm run build
 
@@ -74,36 +79,15 @@ fi
 
 echo "==> systemd services"
 sudo cp deployment/systemd/* /etc/systemd/system/
+sudo sed -i "s|^WorkingDirectory=.*|WorkingDirectory=${APP_DIR}|" /etc/systemd/system/carc-app@.service
 sudo systemctl daemon-reload
 sudo systemctl enable carc-app@prod
 sudo systemctl restart carc-app@prod
 sudo systemctl enable --now carc-backup.timer
 
-echo "==> nginx"
-SERVER_NAME="${DOMAIN:-_}"
-sudo tee /etc/nginx/sites-available/carc >/dev/null <<EOF
-server {
-    listen 80;
-    server_name ${SERVER_NAME};
-    client_max_body_size 10m;
-    location / {
-        proxy_pass http://127.0.0.1:${PORT};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Forwarded-For \$remote_addr;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
-EOF
-sudo ln -sf /etc/nginx/sites-available/carc /etc/nginx/sites-enabled/carc
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t
-sudo systemctl reload nginx
-
-if [[ -n "$DOMAIN" && -n "$EMAIL" ]]; then
-    echo "==> HTTPS via certbot (DNS A record for $DOMAIN must already point here)"
-    sudo apt-get install -y certbot python3-certbot-nginx
-    sudo certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --non-interactive --redirect
-fi
+echo "==> nginx / HTTPS"
+DOMAIN="$DOMAIN" EMAIL="$EMAIL" APP_DIR="$APP_DIR" APP_PORT="$PORT" \
+    bash deployment/scripts/configure-nginx.sh
 
 echo "==> Done. Status:"
 systemctl --no-pager status carc-app@prod | head -5
