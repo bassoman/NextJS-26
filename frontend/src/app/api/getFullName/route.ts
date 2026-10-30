@@ -1,38 +1,84 @@
 // frontend/src/app/api/getFullName/route.ts
-export const dynamic = "force-dynamic"; // Ensure this route is always dynamic and not statically optimized
-import { NextResponse } from 'next/server';
+import db from "@/lib/sqlite";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+// Explicit interface matching the incoming body expectation
+interface LookupRequestBody {
+  callsigns?: string[];
+}
+
+interface NameRow {
+  Callsign: string;
+  FullName: string;
+}
+
+export async function POST(request: NextRequest) {
   try {
-    // 1. Safely read whatever raw JSON body arrived from the test page
-    const body = await request.json().catch(() => null);
-    
-    // Log the event directly to the Next.js console panel
-    console.log("🌐 Next.js Proxy Route triggered. Payload content:", body);
+    const body = (await request.json()) as LookupRequestBody;
+    const { callsigns } = body;
 
-    if (!body) {
-      return NextResponse.json({ error: "Empty or invalid JSON body sent" }, { status: 400 });
+    if (!callsigns || !Array.isArray(callsigns) || callsigns.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid payload. 'callsigns' must be a non-empty array.",
+        },
+        { status: 400 }
+      );
     }
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    console.log(
+      `[SQLite API] Executing batch name lookup for: ${callsigns.join(", ")}`
+    );
 
-    // 2. Direct, raw forwarding passthrough loop to core Express backend
-    const response = await fetch(`${backendUrl}/api/getFullName`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
+    // SQLite requires one ? placeholder for each value.
+    //
+    // Example:
+    // WHERE Callsign IN (?, ?, ?)
+    const placeholders = callsigns.map(() => "?").join(",");
+
+    const statement = db.prepare(`
+      SELECT Callsign, FullName
+      FROM merged
+      WHERE Callsign IN (${placeholders})
+    `);
+
+    const rows = statement.all(...callsigns) as NameRow[];
+
+    // Build the key-value dictionary mapping.
+    const resultsMap: Record<string, string> = {};
+
+    // Seed map with UNKNOWN fallbacks.
+    callsigns.forEach((call) => {
+      resultsMap[call.toUpperCase()] = "UNKNOWN";
     });
 
-    // 3. Extract payload response from port 5000
-    const data = await response.json().catch(() => ({}));
+    // Overwrite with actual database hits.
+    rows.forEach((row) => {
+      if (row.Callsign && row.FullName) {
+        resultsMap[row.Callsign.toUpperCase()] = row.FullName.trim();
+      }
+    });
 
-    // Pass the identical execution status code directly back down to page.js
-    return NextResponse.json(data, { status: response.status });
+    console.log(
+      "✅ SQLite batch lookup completed successfully."
+    );
 
-  } catch (error: any) {
-    console.error("❌ Next.js Proxy Route execution exploded:", error.message);
     return NextResponse.json(
-      { error: "Internal Proxy Forwarding Error", details: error.message }, 
+      { results: resultsMap },
+      { status: 200 }
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error);
+
+    console.error(
+      "❌ Critical failure inside /api/getFullName:",
+      message
+    );
+
+    return NextResponse.json(
+      { error: message },
       { status: 500 }
     );
   }

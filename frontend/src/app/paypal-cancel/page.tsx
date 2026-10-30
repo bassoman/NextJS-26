@@ -1,5 +1,7 @@
 // frontend/src/app/paypal-cancel/page.tsx
 
+import Link from "next/link";
+
 export const metadata = {
   title: "PayPal Payment Cancelled", // More descriptive title for user
   description: "This page is displayed when a PayPal payment has been cancelled by the user.",
@@ -13,10 +15,14 @@ export default function PayPalCancelPage() { // Renamed for clarity (Page suffix
           Payment Cancelled
         </h1>
         <p className="text-xl text-gray-700 leading-relaxed">
-          Your PayPal Dues & Donation Payment was **cancelled**.
+          Your PayPal Dues & Donation Payment was <strong>cancelled</strong>.
         </p>
         <p className="text-md text-gray-600 mt-4">
-          You can return to the <a href="/CARC_Paypal_Dues" className="text-blue-600 hover:underline">dues payment form</a> to try again.
+          You can return to the{" "}
+          <Link href="/paypal-dues" className="text-blue-600 hover:underline">
+            dues payment form
+          </Link>{" "}
+          to try again.
         </p>
       </div>
     </div>

@@ -5,7 +5,6 @@ node_modules
 /backend_paypal/node_modules
 
 # Generated files
-galleryEvents.js
 newsletter-report.txt
 *.bundle
 
@@ -32,6 +31,7 @@ yarn-error.log*
 .next/
 out/
 .next-cache/
+next-env.d.ts
 
 #Logs
 *.log
@@ -68,3 +68,25 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Production SQLite database and runtime files
+frontend/data/*.db
+frontend/data/*.db-wal
+frontend/data/*.db-shm
+frontend/data/*.db-journal
+
+#Locally generated backups
+frontend/backups/
+
+# Private keys
+*.pem
+
+# Local database exports
+/dump.sql
+/backup.sql
+
+
+
+frontend/stashed.env.local
+
+# Server nginx config values
+deployment/nginx.env

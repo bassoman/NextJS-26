@@ -1,0 +1,196 @@
+// frontend/src/app/make-payment/page.js
+'use client';
+
+import { useRouter, useSearchParams } from 'next/navigation';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
+import { withBasePath } from '@/lib/basePath';
+
+function CheckoutContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const token = searchParams.get('token');
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const paypalContainerRef = useRef(null);
+  const buttonsRendered = useRef(false);
+
+  useEffect(() => {
+    if (!token) {
+      setError("Missing required transaction tracking token parameter.");
+      setLoading(false);
+      return;
+    }
+
+    console.log(`[Client] Retrieved tracking token: ${token}`);
+
+    const scriptId = "paypal-sdk-script";
+    let cancelled = false;
+
+    const initializePayPalButtons = () => {
+      if (buttonsRendered.current) return;
+
+      if (!window.paypal) {
+        setError("PayPal SDK failed to load properly.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+
+      window.paypal.Buttons({
+        // Call your brand new Next.js Serverless Order Creation API
+        createOrder: async () => {
+          try {
+            const res = await fetch(withBasePath("/api/orders"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ trackingToken: token }),
+            });
+            const orderData = await res.json().catch(() => ({}));
+            if (!res.ok || !orderData.id) {
+              throw new Error(orderData.error || "Backend failed to initialize transaction order.");
+            }
+            return orderData.id;
+          } catch (err) {
+            console.warn("Order creation failed:", err);
+            setError(`Order creation failed: ${err.message}`);
+            // Rethrow so the PayPal SDK aborts cleanly instead of receiving an undefined order ID.
+            throw err;
+          }
+        },
+
+        // Call your brand new Next.js Serverless Order Capture API on Approval
+        onApprove: async (data) => {
+          try {
+            const res = await fetch(withBasePath(`/api/orders/${data.orderID}/capture`), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+            });
+            if (!res.ok) throw new Error("Backend network error during transaction capture.");
+
+            const captureData = await res.json();
+
+            if (captureData.status === "COMPLETED") {
+              router.push(withBasePath("/paypal-success"));
+            } else {
+              console.warn("PayPal capture did not complete:", captureData);
+              router.push(withBasePath("/paypal-cancel"));
+            }
+          } catch (err) {
+            console.error(err);
+            alert("Payment capture failed. Your bank statement has not been billed.");
+          }
+        },
+
+        onCancel: async (data) => {
+          console.log("[PayPal Client] Payment cancelled by user:", data);
+          try {
+            await fetch(withBasePath("/api/orders/cancel"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderID: data?.orderID,
+                trackingToken: token,
+              }),
+            });
+          } catch (err) {
+            console.error("Failed to update cancel status:", err);
+          }
+          router.push(withBasePath("/paypal-cancel"));
+        },
+
+        onError: (err) => {
+          console.warn("PayPal Smart Button Error:", err);
+          setError("An authorization failure occurred inside the gateway panel.");
+        }
+      }).render(paypalContainerRef.current).catch((err) => {
+        console.warn("PayPal Buttons render failed:", err);
+        buttonsRendered.current = false;
+        setError("PayPal buttons could not be displayed. Please reload the page.");
+      });
+
+      buttonsRendered.current = true;
+    };
+
+
+    const loadPayPal = async () => {
+      const configResponse = await fetch(withBasePath("/api/paypal-config"));
+      if (!configResponse.ok) {
+        throw new Error("PayPal client ID is not configured.");
+      }
+
+      const { clientId, environment } = await configResponse.json();
+      if (cancelled) return;
+      // Looked up after the await so a strict-mode double effect doesn't inject the SDK twice.
+      let script = document.getElementById(scriptId);
+      console.log(`[Client] Initializing PayPal Buttons for tracking token: ${token}`);
+
+      if (!script) {
+        script = document.createElement("script");
+        const paypalHost = environment === "sandbox"
+          ? "www.sandbox.paypal.com"
+          : "www.paypal.com";
+        script.src = `https://${paypalHost}/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=USD`;
+        script.id = scriptId;
+        script.async = true;
+        script.onload = initializePayPalButtons;
+        script.onerror = () => {
+          setError("PayPal SDK could not be loaded.");
+          setLoading(false);
+        };
+        document.body.appendChild(script);
+      } else if (window.paypal) {
+        initializePayPalButtons();
+      } else {
+        script.addEventListener("load", initializePayPalButtons, { once: true });
+        script.addEventListener("error", () => {
+          setError("PayPal SDK could not be loaded.");
+          setLoading(false);
+        }, { once: true });
+      }
+    };
+
+    loadPayPal().catch((err) => {
+      console.error(err);
+      setError("PayPal client ID is not configured.");
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full text-center border border-slate-200">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Club Dues Secure Checkout</h2>
+        <p className="text-slate-500 text-xs mb-6">Tracking Token: <span className="font-mono font-bold">{token}</span></p>
+
+        {loading && (
+          <div className="text-sm font-medium text-slate-600 animate-pulse py-4">
+            Loading secure payment gateway configuration...
+          </div>
+        )}
+
+        {error && (
+          <div className="p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        <div ref={paypalContainerRef} className="mt-4 min-h-[150px]"></div>
+      </div>
+    </div>
+  );
+}
+
+// Next.js requires useSearchParams hooks to be wrapped in a Suspense boundary
+export default function MakePaymentPage() {
+  return (
+    <Suspense fallback={<div className="text-center p-12">Loading Workspace...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}

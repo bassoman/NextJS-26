@@ -24,8 +24,8 @@ export default function CARCAboutCARC() {
       </p>
       <p>
         We invite you to join our monthly meetings, which are held on the{" "}
-        <b>second Wednesday of each month at 7:30 PM</b> at the Pacifica Police
-        Station (2075 Coast Highway). Visitors are always welcome, so please
+        <b>second Wednesday of each month at 7:30 PM</b> at Pacifica Fire Station #72 
+        Station (1100 Linda Mar Blvd, Pacifica). Visitors are always welcome, so please
         stop by! We reccomend checking the{" "}
         <Link href="/coming-events">
           <span className="cursor-pointer underline text-blue-600 hover:text-blue-800">

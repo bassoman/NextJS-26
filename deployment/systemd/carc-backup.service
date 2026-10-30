@@ -1,0 +1,14 @@
+[Unit]
+Description=CARC SQLite database backup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/NextJS-26/frontend
+EnvironmentFile=/etc/carc/prod.env
+ExecStart=/home/ubuntu/NextJS-26/frontend/scripts/backup-sqlite.sh
+Nice=10
+NoNewPrivileges=true
+PrivateTmp=true

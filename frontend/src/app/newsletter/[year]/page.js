@@ -13,7 +13,8 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function YearNewslettersPage({ params }) {
+export default async function YearNewslettersPage(props) {
+  const params = await props.params;
   const { year } = params; // Extract the year from the URL parameters
 
   // Get newsletters for the specific year

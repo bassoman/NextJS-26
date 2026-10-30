@@ -13,7 +13,7 @@ export const metadata = {
 };
 */}
 
-const REPEATER_REPORT_CHECK_API_URL = 'http://192.168.1.110:5000/api/repeater-report-exists'; // Adjust port/domain for production
+const REPEATER_REPORT_CHECK_API_URL = '/api/repeater-report-exists';
 
 export default function CARCRepeaterUsage() {
   const [availableReports, setAvailableReports] = useState([]);

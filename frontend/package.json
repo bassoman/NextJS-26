@@ -3,20 +3,24 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "test": "echo \"No tests specified\" && exit 0",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate-gallery": "node scripts/generate-gallery-data.js",
-    "clean": "rm -rf .next"
+    "generate-gallery": "node scripts/generate-gallery-data.js"
   },
   "dependencies": {
+    "better-sqlite3": "13.0.3",
     "exif-parser": "^0.1.12",
     "image-size": "^2.0.2",
     "mysql2": "^3.22.3",
-    "next": "^15.4.4",
+    "next": "^16.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-photo-album": "^3.6.0",
+    "styled-jsx": "^5.1.7",
+    "yet-another-react-lightbox": "^3.32.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,6 +34,6 @@
     "eslint-config-next": "15.3.5",
     "postcss": "^8",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }

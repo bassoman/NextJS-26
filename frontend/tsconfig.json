@@ -2,10 +2,13 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "jsx": "preserve",
-    "noEmit": true, // Next.js handles emitting
-    "isolatedModules": true // Next.js requirement
-    ,
+    "noEmit": true,
+    "isolatedModules": true,
     "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "plugins": [
       {
         "name": "next"
@@ -22,3 +25,6 @@
     "node_modules"
   ]
 }
+
+
+

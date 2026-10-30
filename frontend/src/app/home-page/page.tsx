@@ -17,11 +17,11 @@ const homePageQuickLinks = [
     imageAlt: "Small tower icon",
     title: "Next Meeting -- 2nd Wed of the month",
     linkHref: "/carc-coming-events",
-    description: `Meetings of the Coastside Amateur Radio Club are generally held in the Emergency Operations Center (EOC) at the Pacifica Police Station, 2075 Coast Highway, Pacifica on the second Wednesday at 7:30 PM.
+    description: `Meetings of the Coastside Amateur Radio Club are generally held at the Pacifica Fire Station #72, 1100 Linda Mar Boulevard, Pacifica on the second Wednesday at 7:30 PM.
 
 However, special meetings may be held at other locations. For additional detail, please refer to the Meeting/Event Schedule.
 
-In conjunction, we will attempt to include participants via Zoom at the address included with the meeting notice. We follow COVID-19 recommendations set forth by the County of San Mateo.`,
+In conjunction, we will attempt to include participants via Google Meet at the address included with the meeting notice. We follow COVID-19 recommendations set forth by the County of San Mateo.`,
   },
   {
     imageSrc: "/images/misc/tow_003.gif",
@@ -116,7 +116,7 @@ export default function CARCHomePage() {
           <p className="text-gray-700 leading-relaxed text-lg">
             Alternatively, you can renew or join online via our PayPal Dues form:
             <br />
-            <Link href="/carc-paypal-dues" className="block mt-2">
+            <Link href="/paypal-dues" className="block mt-2">
               <span className="text-blue-600 hover:underline font-medium cursor-pointer">
                 Pay Dues Online with PayPal
               </span>

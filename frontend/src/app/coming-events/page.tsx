@@ -114,8 +114,8 @@ export default function CARCComingEvents() {
       <div className="bg-white shadow-lg rounded-xl p-6 md:p-8 mt-6">
         <p className="text-gray-700 leading-relaxed text-sm italic">
           <strong>*Note:</strong>
-          All club meetings are currently held at <b>7:30 PM</b>a the Pacifica
-          Police Station, 2075 Coast Highway, Pacifica, in the Multi-Media Room,
+          All club meetings are currently held at <b>7:30 PM</b> at the Pacifica
+          Fire Station #72, 1100 Linda Mar Boulevard, Pacifica,
           unless otherwise posted. Where possible, all meetings will also have a
           Google Meet link available for those who cannot attend in person.
           Please check the website regularly for updates.

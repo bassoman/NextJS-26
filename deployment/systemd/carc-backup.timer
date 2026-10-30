@@ -1,0 +1,11 @@
+[Unit]
+Description=Run CARC SQLite backup hourly
+
+[Timer]
+OnCalendar=*-*-* *:05:00
+Persistent=true
+AccuracySec=1min
+Unit=carc-backup.service
+
+[Install]
+WantedBy=timers.target

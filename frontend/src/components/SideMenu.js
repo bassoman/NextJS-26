@@ -57,9 +57,10 @@ const SideMenu = () => {
       url: "/documents/CARC_Constitution_and_Bylaws_08-27-2025.pdf",
     },
     sep("carc_separator_2"),
-    { name: "Test Get Full Name", path: "/test-get-full-name" },
-    { name: "Test Get Last Entries", path: "/test-get-last-entries" },
-    
+    { name: "Test Get Full Name", path: "/test-get-full-name", prefetch: false },
+    { name: "Test Get Last Entries", path: "/test-get-last-entries", prefetch: false },
+    { name: "Browse/Edit Members", path: "/members", prefetch: false },
+
     sep("carc_separator_3"),
     /* The original menu items created at the start of the project
     { name: "Home", path: "/" },
@@ -67,11 +68,11 @@ const SideMenu = () => {
     { name: "Our Services", path: "/services" },
      */
     { name: "How It Works", path: "/how-it-works" },
-    
+
   ];
 
   return (
-    <nav className="w-64 bg-gray-100 p-4 shadow-lg h-full">
+    <nav className="w-64 bg-gray-100 text-gray-900 p-4 shadow-lg h-full">
       <ul className="space-y-0">
         {menuItems.map((item) => {
           const key = item.type === "separator" ? item.id : item.name;
@@ -79,7 +80,7 @@ const SideMenu = () => {
           if (item.type === "separator") {
             return (
               <li key={key} className="my-4">
-                <hr className="border-t border-gray-400" />
+                <hr className="border-t border-gray-600" />
               </li>
             );
           } else if (item.type === "pdf") {
@@ -100,11 +101,11 @@ const SideMenu = () => {
               <li key={key}>
                 <Link
                   href={item.path}
-                  className={`block p-2 rounded transition ${
-                    pathname === item.path
-                      ? "bg-blue-500 text-white"
-                      : "hover:bg-gray-200"
-                  }`}
+                  prefetch={item.prefetch}
+                  className={`block p-2 rounded transition ${pathname === item.path
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-900 hover:bg-gray-200"
+                    }`}
                 >
                   {item.name}
                 </Link>
