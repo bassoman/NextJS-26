@@ -99,7 +99,7 @@ When prompted, paste the `KEY=value` lines and press **Ctrl-D**.
 1. Installs Node 22, nginx, sqlite3, build tools, and adds 2 GB swap if none exists.
 2. Clones (or pulls) the repo to `~/NextJS-26`, then `npm ci` and `npm run build`.
 3. Writes `/etc/carc/prod.env` (mode 600) if it doesn't already exist.
-4. Seeds `/var/carc/prod` and `/var/carc/sandbox` databases via `initialize-databases.sh` (skipped if the prod DB exists or the source DB is missing).
+4. Seeds `/var/carc/prod` and `/var/carc/sandbox` databases via `initialize-databases.sh` (skipped if the prod DB exists or the source DB is missing), then repairs permissions on existing database files and directories.
 5. Installs the systemd units, starts `carc-app@prod`, and enables the hourly `carc-backup.timer`.
 6. Runs `configure-nginx.sh` to proxy nginx to `127.0.0.1:3000`, and runs certbot if `DOMAIN` and `EMAIL` are set.
 

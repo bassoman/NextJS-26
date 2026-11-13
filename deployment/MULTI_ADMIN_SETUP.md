@@ -248,21 +248,20 @@ ssh alice@example.com
 
 ### "Permission Denied" on Database Files
 
-If Alice can't read the database for backups:
+If the application reports `SQLITE_CANTOPEN` or an administrator cannot access the database:
 
 ```bash
-# Check directory permissions
-ls -ld /var/carc/prod/data/
-# Should show: www-data:webadmins 770
+# Repair existing production and sandbox database directories, files and SQLite sidecars.
+sudo bash /var/www/carc-app/deployment/scripts/fix-database-permissions.sh
 
-# Check setgid is set (s in group execute position)
-stat /var/carc/prod/data/ | grep Access
-# Should show: 0 (2755) for setgid
-
-# Fix if needed
-sudo chmod g+s /var/carc/prod/data/
-sudo chmod 770 /var/carc/prod/data/
+# Check access to the production database
+sudo -u www-data test -r /var/carc/prod/data/carc.db && echo "Database readable"
+sudo -u www-data test -w /var/carc/prod/data && echo "Directory writable"
 ```
+
+The setup script also runs this repair before starting the service. Missing directories
+are skipped; databases are not created or replaced. If access still fails, inspect parent
+directory permissions with `namei -l /var/carc/prod/data/carc.db`.
 
 ### Deployment Restart Requires Password
 

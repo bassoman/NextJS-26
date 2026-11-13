@@ -124,6 +124,10 @@ else
     echo "Copy frontend/data/carc.db to the server and re-run initialize-databases.sh if needed."
 fi
 
+echo "==> Fixing database permissions"
+sudo env CARC_SERVICE_USER="$SERVICE_USER" CARC_SERVICE_GROUP="$SERVICE_GROUP" \
+    bash "$APP_DIR/deployment/scripts/fix-database-permissions.sh"
+
 echo "==> systemd services"
 sudo cp "$APP_DIR/deployment/systemd"/* /etc/systemd/system/
 sudo systemctl daemon-reload
