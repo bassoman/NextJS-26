@@ -78,7 +78,7 @@ git config --global --add safe.directory "$APP_DIR"
 cd "$APP_DIR"
 
 echo "==> Initializing deployment users and directories"
-sudo bash deployment/scripts/setup-deployment-users.sh --init-directories
+sudo bash "$APP_DIR/deployment/scripts/setup-deployment-users.sh" --init-directories
 
 echo "==> Environment file"
 ENV_FILE="$APP_DIR/.env"
@@ -86,7 +86,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
     if [[ "${USE_SSM:-0}" == "1" ]]; then
         # Requires the AWS CLI configured with read access to /carc/prod/*
         # fetch-ssm-params.sh now writes directly to the .env file
-        sudo -E env "PATH=$PATH" APP_DIR="$APP_DIR" bash deployment/scripts/fetch-ssm-params.sh
+        sudo -E env "PATH=$PATH" APP_DIR="$APP_DIR" bash "$APP_DIR/deployment/scripts/fetch-ssm-params.sh"
     else
         echo "Paste your production env (KEY=value lines), then Ctrl-D. Leave empty to edit later:"
         tee "$ENV_FILE" >/dev/null
@@ -113,15 +113,15 @@ sudo -u "$SERVICE_USER" npm install
 sudo -u "$SERVICE_USER" npm run build
 
 echo "==> Initializing databases (skipped if already present or no source DB)"
-if [[ -f frontend/data/carc.db && ! -e /var/carc/prod/data/carc.db ]]; then
-    sudo bash deployment/scripts/initialize-databases.sh
+if [[ -f "$APP_DIR/frontend/data/carc.db" && ! -e /var/carc/prod/data/carc.db ]]; then
+    sudo bash "$APP_DIR/deployment/scripts/initialize-databases.sh"
 else
     echo "Skipping: source DB missing or prod DB already exists."
     echo "Copy frontend/data/carc.db to the server and re-run initialize-databases.sh if needed."
 fi
 
 echo "==> systemd services"
-sudo cp deployment/systemd/* /etc/systemd/system/
+sudo cp "$APP_DIR/deployment/systemd"/* /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable carc-app@prod
 sudo systemctl restart carc-app@prod
@@ -129,7 +129,7 @@ sudo systemctl enable --now carc-backup.timer
 
 echo "==> nginx / HTTPS"
 DOMAIN="$DOMAIN" EMAIL="$EMAIL" APP_DIR="$APP_DIR" APP_PORT="$PORT" \
-    bash deployment/scripts/configure-nginx.sh
+    bash "$APP_DIR/deployment/scripts/configure-nginx.sh"
 
 echo "==> Done. Status:"
 systemctl --no-pager status carc-app@prod | head -5
