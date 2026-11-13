@@ -36,7 +36,7 @@ case "$CARC_ENVIRONMENT" in
         ;;
 esac
 
-# Ensure we have a proper directory
+# Ensure we have a proper directory with correct permissions
 TARGET_ENV_DIR="$(dirname "$TARGET_ENV_FILE")"
 
 echo "[$(date -u +%FT%TZ)] Fetching SSM parameters from path: ${SSM_PATH}"
@@ -49,7 +49,12 @@ if ! command -v aws >/dev/null 2>&1; then
     exit 1
 fi
 
+# Create target directory with proper permissions
 mkdir -p "$TARGET_ENV_DIR"
+if [[ $EUID -eq 0 ]]; then
+    chown "$SERVICE_USER:$SERVICE_GROUP" "$TARGET_ENV_DIR"
+    chmod 755 "$TARGET_ENV_DIR"
+fi
 
 TEMP_ENV_FILE="$(mktemp "${TARGET_ENV_FILE}.tmp.XXXXXX")"
 cleanup() {

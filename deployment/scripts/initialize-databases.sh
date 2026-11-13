@@ -20,6 +20,14 @@ if [[ ! -f "$SOURCE_DB" ]]; then
     exit 1
 fi
 
+# Ensure groups exist
+for group_name in "$SERVICE_GROUP" "deployers"; do
+    if ! getent group "$group_name" >/dev/null 2>&1; then
+        echo "INFO: Creating group: $group_name"
+        groupadd "$group_name"
+    fi
+done
+
 for target_db in "$PROD_DB" "$SANDBOX_DB"; do
     if [[ "$target_db" == "$SOURCE_DB" ]]; then
         echo "ERROR: Refusing to overwrite the source database." >&2
@@ -32,10 +40,14 @@ for target_db in "$PROD_DB" "$SANDBOX_DB"; do
     fi
 
     target_dir="$(dirname "$target_db")"
+    
+    # Create parent directories (/var/carc, /var/carc/prod, /var/carc/prod/data, etc.)
     mkdir -p "$target_dir"
+    
+    # Set ownership and permissions: www-data:webadmins, 770, with setgid
     chown "$SERVICE_USER:$SERVICE_GROUP" "$target_dir"
     chmod 770 "$target_dir"
-    chmod g+s "$target_dir"  # Enable setgid for group inheritance
+    chmod g+s "$target_dir"
 
     sqlite3 "$SOURCE_DB" ".backup '$target_db'"
     chown "$SERVICE_USER:$SERVICE_GROUP" "$target_db"

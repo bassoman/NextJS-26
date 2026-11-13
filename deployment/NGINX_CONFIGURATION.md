@@ -460,9 +460,19 @@ server {
 
 ---
 
+## Troubleshooting
+
+**Can't reach the app through nginx? See:**
+- [NGINX_TROUBLESHOOTING.md](./NGINX_TROUBLESHOOTING.md) - Comprehensive troubleshooting guide
+- [NGINX_CONFIG_REFERENCE.md](./NGINX_CONFIG_REFERENCE.md) - Quick reference for viewing nginx configuration
+
+---
+
 ## Related Documentation
 
 - [MULTI_ADMIN_SETUP.md](./MULTI_ADMIN_SETUP.md) - User and permission architecture
 - [AWS_SSM_SETUP.md](./AWS_SSM_SETUP.md) - Environment variable management
 - [DEPLOYMENT_MODERNIZATION.md](./DEPLOYMENT_MODERNIZATION.md) - Architecture details
 - [setup.md](./setup.md) - Quick start guide
+- [NGINX_TROUBLESHOOTING.md](./NGINX_TROUBLESHOOTING.md) - Detailed troubleshooting guide
+- [NGINX_CONFIG_REFERENCE.md](./NGINX_CONFIG_REFERENCE.md) - Command reference for viewing configs
