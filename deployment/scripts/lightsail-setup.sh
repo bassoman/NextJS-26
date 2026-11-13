@@ -10,7 +10,8 @@
 #   DOMAIN          Enable HTTPS with this domain name
 #   EMAIL           Let's Encrypt contact email (required with DOMAIN)
 #   USE_SSM         1 = fetch env from AWS SSM instead of prompting
-#   REPO_URL        Override git repo URL
+#   REPO_URL        Override git repo URL (default: github.com/bassoman/NextJS-26.git)
+#   REPO_BRANCH     Git branch to clone (default: main)
 #   WWW_ALIAS       0 = skip www.DOMAIN (default 1)
 #
 # Architecture:
@@ -23,6 +24,7 @@ set -Eeuo pipefail
 DOMAIN="${DOMAIN:-}"
 EMAIL="${EMAIL:-}"
 REPO_URL="${REPO_URL:-https://github.com/bassoman/NextJS-26.git}"
+REPO_BRANCH="${REPO_BRANCH:-main}"
 APP_DIR="${APP_DIR:-/var/www/carc-app}"
 PORT=3000
 SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
@@ -66,7 +68,7 @@ else
     # Create directory writable by current user for git clone
     sudo mkdir -p "$APP_DIR"
     sudo chown "$(id -u):$(id -g)" "$APP_DIR"
-    git clone "$REPO_URL" "$APP_DIR"
+    git clone --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
 # Now fix ownership to www-data:webadmins (after all git operations)
