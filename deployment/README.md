@@ -14,6 +14,10 @@ Complete guide to deploying CARC on Ubuntu Lightsail with production-standard mu
 - **[MULTI_ADMIN_SETUP.md](./MULTI_ADMIN_SETUP.md)** - Complete multi-user deployment model with permissions
 - **[DEPLOYMENT_MODERNIZATION.md](./DEPLOYMENT_MODERNIZATION.md)** - Architecture details and design rationale
 
+### Permissions & Troubleshooting
+- **[PERMISSION_FIXES.md](./PERMISSION_FIXES.md)** - Permission model and fixes for EACCES errors
+- **[MANUAL_FIX_REFERENCE.md](./MANUAL_FIX_REFERENCE.md)** - Manual permission fixes (what the scripts do automatically)
+
 ### Environment Variables & Secrets
 - **[AWS_SSM_SETUP.md](./AWS_SSM_SETUP.md)** - Store secrets in AWS Parameter Store
 - **[nginx.env.example](./nginx.env.example)** - nginx configuration template
