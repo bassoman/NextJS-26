@@ -8,8 +8,9 @@
 #   EMAIL                 Let's Encrypt contact. HTTPS is enabled when DOMAIN and EMAIL are set.
 #   ENABLE_HTTPS          1/0. Default: 1 if DOMAIN and EMAIL are set, else 0.
 #   WWW_ALIAS             1 = also serve www.DOMAIN and redirect it to DOMAIN (default 1).
-#   APP_DIR               Location of the app on the server (default $HOME/NextJS-26).
-#                         Not used by nginx (it only proxies); lightsail-setup.sh uses it for systemd.
+#   APP_DIR               Location of the app on the server (default /var/www/carc-app).
+#                         Must match lightsail-setup.sh APP_DIR. nginx only proxies; APP_DIR is
+#                         used by lightsail-setup.sh for systemd WorkingDirectory.
 #   APP_PORT              Port the Next.js app listens on (default 3000).
 #   SITE_NAME             nginx site file name (default carc).
 #   CLIENT_MAX_BODY_SIZE  Upload limit (default 10m).
@@ -32,7 +33,7 @@ fi
 DOMAIN="${DOMAIN:-}"
 EMAIL="${EMAIL:-}"
 WWW_ALIAS="${WWW_ALIAS:-1}"
-APP_DIR="${APP_DIR:-$HOME/NextJS-26}"
+APP_DIR="${APP_DIR:-/var/www/carc-app}"
 APP_PORT="${APP_PORT:-3000}"
 SITE_NAME="${SITE_NAME:-carc}"
 CLIENT_MAX_BODY_SIZE="${CLIENT_MAX_BODY_SIZE:-10m}"

@@ -68,6 +68,8 @@ This script will:
 7. Install and start systemd services
 8. Configure nginx with optional HTTPS
 
+**See [NGINX_CONFIGURATION.md](./NGINX_CONFIGURATION.md) for detailed nginx setup, HTTPS/Let's Encrypt, troubleshooting, and performance tuning.**
+
 ### 2. Create Admin Users
 
 After initial setup, add team members:
