@@ -7,8 +7,8 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SOURCE_DB="${CARC_SOURCE_DB:-${REPO_DIR}/frontend/data/carc.db}"
 PROD_DB="${CARC_PROD_DB:-/var/carc/prod/data/carc.db}"
 SANDBOX_DB="${CARC_SANDBOX_DB:-/var/carc/sandbox/data/carc.db}"
-SERVICE_USER="${CARC_SERVICE_USER:-ubuntu}"
-SERVICE_GROUP="${CARC_SERVICE_GROUP:-ubuntu}"
+SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
+SERVICE_GROUP="${CARC_SERVICE_GROUP:-webadmins}"
 
 if ! command -v sqlite3 >/dev/null 2>&1; then
     echo "ERROR: sqlite3 is required to initialize the databases." >&2
@@ -34,7 +34,8 @@ for target_db in "$PROD_DB" "$SANDBOX_DB"; do
     target_dir="$(dirname "$target_db")"
     mkdir -p "$target_dir"
     chown "$SERVICE_USER:$SERVICE_GROUP" "$target_dir"
-    chmod 750 "$target_dir"
+    chmod 770 "$target_dir"
+    chmod g+s "$target_dir"  # Enable setgid for group inheritance
 
     sqlite3 "$SOURCE_DB" ".backup '$target_db'"
     chown "$SERVICE_USER:$SERVICE_GROUP" "$target_db"

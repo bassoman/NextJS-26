@@ -2,6 +2,52 @@
 
 Deploys the app on a single Ubuntu Lightsail instance: Node.js app under systemd, nginx reverse proxy, optional Let's Encrypt HTTPS, hourly SQLite backups.
 
+**New (v2.0):** This setup now follows production-standard multi-admin architecture with proper group-based access control. See **[MULTI_ADMIN_SETUP.md](./MULTI_ADMIN_SETUP.md)** for detailed documentation on user roles, permissions, and operations.
+
+---
+
+## Quick Start
+
+For a fresh instance with multiple admins:
+
+```bash
+# 1. SSH into instance and clone the repo
+ssh ubuntu@<static-ip>
+git clone https://github.com/bassoman/NextJS-26.git
+cd NextJS-26
+
+# 2. Run the setup script (creates app at /var/www/carc-app)
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+
+# 3. Add team members
+sudo bash /var/www/carc-app/deployment/scripts/setup-deployment-users.sh \
+  --user alice --password "pass123" --deployer --pubkey alice_id_rsa.pub \
+  --user bob --password "pass456" --pubkey bob_id_rsa.pub
+
+# 4. Done! alice and bob can now SSH in and manage deployments
+```
+
+---
+
+## Architecture Changes (v2.0)
+
+### Before (Legacy)
+- App location: `~/NextJS-26` (home directory)
+- Service user: `ubuntu` (shared admin account)
+- Permissions: home directory defaults
+- Multi-user: not designed for it
+
+### Now (v2.0)
+- App location: `/var/www/carc-app` (FHS-compliant)
+- Service user: `www-data` (unprivileged)
+- Admin group: `webadmins` (all can read/write code)
+- Deployer group: `deployers` (subset can restart services)
+- Permissions: proper group inheritance with setgid
+
+**Migration:** Existing deployments at `~/NextJS-26` will continue to work; new deployments will use `/var/www/carc-app`.
+
+---
+
 ## 1. Create the instance
 
 1. Lightsail console → **Create instance** → Linux/Unix → **OS Only** → Ubuntu 22.04 or 24.04.
@@ -12,7 +58,7 @@ Deploys the app on a single Ubuntu Lightsail instance: Node.js app under systemd
 
 ## 2. Prepare your values
 
-Have the production environment variables ready (PayPal keys, admin diagnostic credentials, etc.). On the server they live only in `/etc/carc/prod.env` (loaded by systemd); no `.env.local` is used. `NEXT_PUBLIC_*` values are also read from that file at build time. Do not commit them.
+Have the production environment variables ready (PayPal keys, admin diagnostic credentials, etc.). On the server they live in `/var/www/carc-app/.env` (loaded by systemd); no `.env.local` is used. `NEXT_PUBLIC_*` values are also read from that file at build time. Do not commit them.
 
 Do not include `PORT` or `SQLITE_DATABASE_PATH`; the script sets them (`3000` and `/var/carc/prod/data/carc.db`).
 
@@ -27,15 +73,15 @@ scp frontend/data/carc.db ubuntu@<static-ip>:~/NextJS-26/frontend/data/
 
 ## 3. Run the script
 
-SSH in as `ubuntu` and run:
+SSH in as a non-root user and run:
 
 ```bash
 ssh ubuntu@<static-ip>
-curl -fsSLO https://raw.githubusercontent.com/bassoman/NextJS-26/main/deployment/scripts/lightsail-setup.sh
-DOMAIN=example.com EMAIL=you@example.com bash lightsail-setup.sh
+git clone https://github.com/bassoman/NextJS-26.git  # Or: cd NextJS-26 && git pull
+DOMAIN=example.com EMAIL=you@example.com bash NextJS-26/deployment/scripts/lightsail-setup.sh
 ```
 
-If the repo is private, clone it first (`git clone ... ~/NextJS-26`) and run `bash ~/NextJS-26/deployment/scripts/lightsail-setup.sh`.
+If the repo is private, authenticate with your SSH key or personal access token.
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
@@ -43,7 +89,7 @@ If the repo is private, clone it first (`git clone ... ~/NextJS-26`) and run `ba
 | `EMAIL` | with `DOMAIN` | Let's Encrypt contact (a personal address is fine). |
 | `USE_SSM` | no | `1` = fetch env from AWS SSM `/carc/prod/*` instead of prompting (see below). |
 | `REPO_URL` | no | Override the git repo URL. |
-| `APP_DIR` | no | App location on the server (default `~/NextJS-26`); also written into the systemd unit. |
+| `APP_DIR` | no | App location on the server (default `/var/www/carc-app`); must be writable by the current user. |
 | `WWW_ALIAS` | no | `0` to skip `www.DOMAIN` (default `1`: served and redirected to `DOMAIN`). |
 
 When prompted, paste the `KEY=value` lines and press **Ctrl-D**.

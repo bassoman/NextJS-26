@@ -1,9 +1,33 @@
 #!/usr/bin/env bash
+# Fetch environment variables from AWS SSM Parameter Store.
+# Usage (as root or via sudo):
+#   bash fetch-ssm-params.sh
+#   CARC_ENVIRONMENT=sandbox bash fetch-ssm-params.sh
+#   APP_DIR=/custom/app/path bash fetch-ssm-params.sh
+#
+# Fetches from SSM path: /carc/prod/* (or /carc/sandbox/*)
+# Writes to: /var/www/carc-app/.env (or custom path)
 
 set -Eeuo pipefail
 umask 077
 
+# Configuration
 CARC_ENVIRONMENT="${CARC_ENVIRONMENT:-prod}"
+APP_DIR="${APP_DIR:-/var/www/carc-app}"
+SSM_PATH="${CARC_SSM_PATH:-/carc/${CARC_ENVIRONMENT}}"
+TARGET_ENV_FILE="${CARC_TARGET_ENV_FILE:-${APP_DIR}/.env}"
+SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
+SERVICE_GROUP="${CARC_SERVICE_GROUP:-webadmins}"
+AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}"
+
+# Database and port based on environment
+SQLITE_DATABASE_PATH="/var/carc/${CARC_ENVIRONMENT}/data/carc.db"
+PORT=3000
+if [[ "$CARC_ENVIRONMENT" == "sandbox" ]]; then
+    PORT=3001
+fi
+
+# Validate environment
 case "$CARC_ENVIRONMENT" in
     prod|sandbox) ;;
     *)
@@ -12,17 +36,13 @@ case "$CARC_ENVIRONMENT" in
         ;;
 esac
 
-SSM_PATH="${CARC_SSM_PATH:-/carc/${CARC_ENVIRONMENT}}"
-TARGET_ENV_FILE="${CARC_TARGET_ENV_FILE:-/etc/carc/${CARC_ENVIRONMENT}.env}"
+# Ensure we have a proper directory
 TARGET_ENV_DIR="$(dirname "$TARGET_ENV_FILE")"
-AWS_REGION="${AWS_REGION:-${AWS_DEFAULT_REGION:-us-west-2}}"
-SQLITE_DATABASE_PATH="/var/carc/${CARC_ENVIRONMENT}/data/carc.db"
-PORT=3000
-if [[ "$CARC_ENVIRONMENT" == "sandbox" ]]; then
-    PORT=3001
-fi
 
-echo "[$(date -u +%FT%TZ)] Fetching SSM parameters under path: ${SSM_PATH} (Region: ${AWS_REGION})"
+echo "[$(date -u +%FT%TZ)] Fetching SSM parameters from path: ${SSM_PATH}"
+echo "[$(date -u +%FT%TZ)] Environment: ${CARC_ENVIRONMENT}"
+echo "[$(date -u +%FT%TZ)] Target file: ${TARGET_ENV_FILE}"
+echo "[$(date -u +%FT%TZ)] AWS Region: ${AWS_REGION}"
 
 if ! command -v aws >/dev/null 2>&1; then
     echo "ERROR: AWS CLI is not installed or not in PATH." >&2
@@ -71,7 +91,18 @@ fi
 printf 'SQLITE_DATABASE_PATH=%s\n' "$SQLITE_DATABASE_PATH" >> "$TEMP_ENV_FILE"
 printf 'PORT=%s\n' "$PORT" >> "$TEMP_ENV_FILE"
 
+# Move to target location
 mv "$TEMP_ENV_FILE" "$TARGET_ENV_FILE"
-chmod 600 "$TARGET_ENV_FILE"
+
+# Set proper permissions for multi-admin architecture
+# Owner: service user, Group: webadmins, Mode: 640 (rw-r-----)
+chmod 640 "$TARGET_ENV_FILE"
+if [[ $EUID -eq 0 ]]; then
+    chown "$SERVICE_USER:$SERVICE_GROUP" "$TARGET_ENV_FILE"
+    echo "[$(date -u +%FT%TZ)] File ownership: ${SERVICE_USER}:${SERVICE_GROUP}"
+else
+    echo "[$(date -u +%FT%TZ)] Note: Run as root to set ownership to ${SERVICE_USER}:${SERVICE_GROUP}"
+fi
 
 echo "[$(date -u +%FT%TZ)] Successfully wrote $(wc -l < "$TARGET_ENV_FILE") environment variables to ${TARGET_ENV_FILE}"
+echo "[$(date -u +%FT%TZ)] Permissions: mode 640, owner ${SERVICE_USER}:${SERVICE_GROUP}"

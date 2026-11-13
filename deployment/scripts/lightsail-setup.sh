@@ -1,21 +1,35 @@
 #!/usr/bin/env bash
 # One-shot setup for a fresh Ubuntu Lightsail instance.
-# Usage (as the ubuntu user):
+# Follows production-standard architecture with multi-admin isolation.
+#
+# Usage (as a non-root user with sudo access):
 #   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh
-# Optional: APP_DIR (default ~/NextJS-26), WWW_ALIAS=0, see configure-nginx.sh for more.
-# DOMAIN/EMAIL are optional; without them nginx serves plain HTTP on the IP.
-# USE_SSM=1 pulls env values from AWS SSM (/carc/prod/*) instead of prompting.
-# Env file: put your secrets in /etc/carc/prod.env beforehand, or edit it when prompted.
+#
+# Optional variables:
+#   APP_DIR         Application directory (default /var/www/carc-app)
+#   DOMAIN          Enable HTTPS with this domain name
+#   EMAIL           Let's Encrypt contact email (required with DOMAIN)
+#   USE_SSM         1 = fetch env from AWS SSM instead of prompting
+#   REPO_URL        Override git repo URL
+#   WWW_ALIAS       0 = skip www.DOMAIN (default 1)
+#
+# Architecture:
+#   - App runs from /var/www/carc-app (FHS-compliant)
+#   - Service user: www-data (unprivileged runtime)
+#   - Admin group: webadmins (all administrators)
+#   - Deployer group: deployers (subset authorized for deployments)
 set -Eeuo pipefail
 
 DOMAIN="${DOMAIN:-}"
 EMAIL="${EMAIL:-}"
 REPO_URL="${REPO_URL:-https://github.com/bassoman/NextJS-26.git}"
-APP_DIR="${APP_DIR:-$HOME/NextJS-26}"
+APP_DIR="${APP_DIR:-/var/www/carc-app}"
 PORT=3000
+SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
+SERVICE_GROUP="${CARC_SERVICE_GROUP:-webadmins}"
 
 if [[ $EUID -eq 0 ]]; then
-    echo "Run as the ubuntu user (not root); sudo is used where needed." >&2
+    echo "Run as a non-root user with sudo access (not as root)" >&2
     exit 1
 fi
 
@@ -36,28 +50,32 @@ if ! swapon --show | grep -q .; then
     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
 
-echo "==> Fetching code"
+echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
     git -C "$APP_DIR" pull --ff-only
 else
+    sudo mkdir -p "$APP_DIR"
+    sudo chown -R "$(id -u):$(id -g)" "$APP_DIR"
     git clone "$REPO_URL" "$APP_DIR"
 fi
 cd "$APP_DIR"
 
 echo "==> Environment file"
-sudo mkdir -p /etc/carc
-if [[ ! -f /etc/carc/prod.env ]]; then
+ENV_FILE="$APP_DIR/.env"
+if [[ ! -f "$ENV_FILE" ]]; then
     if [[ "${USE_SSM:-0}" == "1" ]]; then
         # Requires the AWS CLI configured with read access to /carc/prod/*
-        sudo -E env "PATH=$PATH" bash deployment/scripts/fetch-ssm-params.sh
+        # fetch-ssm-params.sh now writes directly to the .env file
+        sudo -E env "PATH=$PATH" APP_DIR="$APP_DIR" bash deployment/scripts/fetch-ssm-params.sh
     else
-        sudo install -m 600 -o root -g root /dev/null /etc/carc/prod.env
         echo "Paste your production env (KEY=value lines), then Ctrl-D. Leave empty to edit later:"
-        sudo tee /etc/carc/prod.env >/dev/null
+        tee "$ENV_FILE" >/dev/null
         {
             echo "PORT=$PORT"
             echo "SQLITE_DATABASE_PATH=/var/carc/prod/data/carc.db"
-        } | sudo tee -a /etc/carc/prod.env >/dev/null
+        } >> "$ENV_FILE"
+        sudo chown "$SERVICE_USER:$SERVICE_GROUP" "$ENV_FILE"
+        sudo chmod 640 "$ENV_FILE"
     fi
 fi
 
@@ -65,9 +83,12 @@ echo "==> Building"
 # NEXT_PUBLIC_* values are inlined at build time, so export them from the env file first.
 while IFS= read -r line; do
     [[ "$line" =~ ^(NEXT_PUBLIC_[A-Za-z0-9_]*)=(.*)$ ]] && export "${BASH_REMATCH[1]}=${BASH_REMATCH[2]}"
-done < <(sudo cat /etc/carc/prod.env)
+done < "$ENV_FILE"
 npm ci
 npm run build
+
+echo "==> Initializing deployment users and directories"
+sudo bash deployment/scripts/setup-deployment-users.sh --init-directories
 
 echo "==> Initializing databases (skipped if already present or no source DB)"
 if [[ -f frontend/data/carc.db && ! -e /var/carc/prod/data/carc.db ]]; then
@@ -79,7 +100,6 @@ fi
 
 echo "==> systemd services"
 sudo cp deployment/systemd/* /etc/systemd/system/
-sudo sed -i "s|^WorkingDirectory=.*|WorkingDirectory=${APP_DIR}|" /etc/systemd/system/carc-app@.service
 sudo systemctl daemon-reload
 sudo systemctl enable carc-app@prod
 sudo systemctl restart carc-app@prod
