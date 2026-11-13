@@ -59,6 +59,8 @@ sudo chmod g+s /var/www
 
 echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
+    # If directory already exists, configure git to trust it (ownership may be www-data)
+    git config --global --add safe.directory "$APP_DIR"
     git -C "$APP_DIR" pull --ff-only
 else
     sudo mkdir -p "$APP_DIR"
@@ -70,6 +72,8 @@ else
     sudo chown -R www-data:webadmins "$APP_DIR"
     sudo chmod -R u+rwX,g+rwX,o+rX "$APP_DIR"
     sudo find "$APP_DIR" -type d -exec chmod g+s {} +
+    # Configure git to trust the www-data owned directory
+    git config --global --add safe.directory "$APP_DIR"
 fi
 cd "$APP_DIR"
 
