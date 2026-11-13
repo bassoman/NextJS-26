@@ -61,9 +61,11 @@ sudo chmod g+s /var/www
 
 echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
-    # If directory already exists, fix ownership to allow git pull as current user
+    # If directory already exists, ensure we're on the right branch
     sudo chown -R "$(id -u):$(id -g)" "$APP_DIR"
-    git -C "$APP_DIR" pull --ff-only
+    git -C "$APP_DIR" fetch origin
+    git -C "$APP_DIR" checkout "$REPO_BRANCH"
+    git -C "$APP_DIR" pull --ff-only origin "$REPO_BRANCH"
 else
     # Create directory writable by current user for git clone
     sudo mkdir -p "$APP_DIR"
