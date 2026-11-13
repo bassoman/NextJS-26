@@ -50,8 +50,8 @@ if ! swapon --show | grep -q .; then
     echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
 fi
 
-echo "==> Preparing $APP_DIR for deployment"
-# Ensure parent directory exists and has correct permissions
+echo "==> Preparing /var/www for deployment"
+# Ensure parent directory exists and can be written to by current user
 sudo mkdir -p /var/www
 sudo chown www-data:webadmins /var/www
 sudo chmod 775 /var/www
@@ -59,22 +59,22 @@ sudo chmod g+s /var/www
 
 echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
-    # If directory already exists, configure git to trust it (ownership may be www-data)
-    git config --global --add safe.directory "$APP_DIR"
+    # If directory already exists, fix ownership to allow git pull as current user
+    sudo chown -R "$(id -u):$(id -g)" "$APP_DIR"
     git -C "$APP_DIR" pull --ff-only
 else
+    # Create directory writable by current user for git clone
     sudo mkdir -p "$APP_DIR"
-    sudo chown www-data:webadmins "$APP_DIR"
-    sudo chmod 775 "$APP_DIR"
-    sudo chmod g+s "$APP_DIR"
+    sudo chown "$(id -u):$(id -g)" "$APP_DIR"
     git clone "$REPO_URL" "$APP_DIR"
-    # Fix ownership after clone (git creates files as current user)
-    sudo chown -R www-data:webadmins "$APP_DIR"
-    sudo chmod -R u+rwX,g+rwX,o+rX "$APP_DIR"
-    sudo find "$APP_DIR" -type d -exec chmod g+s {} +
-    # Configure git to trust the www-data owned directory
-    git config --global --add safe.directory "$APP_DIR"
 fi
+
+# Now fix ownership to www-data:webadmins (after all git operations)
+sudo chown -R www-data:webadmins "$APP_DIR"
+sudo chmod -R u+rwX,g+rwX,o+rX "$APP_DIR"
+sudo find "$APP_DIR" -type d -exec chmod g+s {} +
+# Configure git to trust the www-data owned directory
+git config --global --add safe.directory "$APP_DIR"
 cd "$APP_DIR"
 
 echo "==> Initializing deployment users and directories"
