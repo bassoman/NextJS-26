@@ -89,20 +89,19 @@ If the repo is private, authenticate with your SSH key or personal access token.
 |----------|----------|---------|
 | `DOMAIN` | no | Enables the nginx `server_name` and HTTPS. Without it, the site is served over HTTP on the IP. |
 | `EMAIL` | with `DOMAIN` | Let's Encrypt contact (a personal address is fine). |
-| `USE_SSM` | no | `1` = fetch env from AWS SSM `/carc/prod/*` instead of prompting (see below). |
 | `REPO_URL` | no | Git repository URL to clone or pull from. Set this to the upstream repository URL when deploying from a fork (default: `https://github.com/bassoman/NextJS-26.git`). |
 | `APP_DIR` | no | App location on the server (default `/var/www/carc-app`); must be writable by the current user. |
 | `WWW_ALIAS` | no | `0` to skip `www.DOMAIN` (default `1`: served and redirected to `DOMAIN`). |
 
-When prompted, paste the `KEY=value` lines and press **Ctrl-D**.
+Setup does not prompt for environment variables. If `.env` does not already exist, it fetches them from AWS SSM under `/carc/prod/*`; configure AWS CLI credentials and access before running setup.
 
-Append `--init` to install and configure without enabling or starting the app or backup services. The setup installs `ssm-write.sh` as `/usr/local/bin/ssm-write` when it is present in the selected repository; it does not run the helper automatically. Run it from the command line as needed before starting the services manually.
+Append `--init` to install and configure without enabling or starting the app or backup services. The SSM writer remains at `deployment/scripts/ssm-write.sh`; setup does not run or install it elsewhere.
 
 ## 4. What the script does
 
 1. Installs Node 22, nginx, sqlite3, build tools, and adds 2 GB swap if none exists.
 2. Clones (or pulls) the repo to `~/NextJS-26`, then `npm ci` and `npm run build`.
-3. Writes `/etc/carc/prod.env` (mode 600) if it doesn't already exist.
+3. Fetches `/carc/prod/*` from SSM into `/var/www/carc-app/.env` (mode 640) if the env file doesn't already exist.
 4. Seeds `/var/carc/prod` and `/var/carc/sandbox` databases via `initialize-databases.sh` (skipped if the prod DB exists or the source DB is missing), then repairs permissions on existing database files and directories.
 5. Installs the systemd units; normal mode starts `carc-app@prod` and enables the hourly `carc-backup.timer`, while `--init` leaves both services unenabled and does not start them.
 6. Runs `configure-nginx.sh` to proxy nginx to `127.0.0.1:3000`, and runs certbot if `DOMAIN` and `EMAIL` are set.
@@ -111,12 +110,12 @@ The script is safe to re-run to deploy updates (it pulls, rebuilds and restarts)
 
 ## 5. Optional: use AWS SSM Parameter Store for env values
 
-Lightsail instances have no IAM role, so this needs an IAM user with access keys on the server:
+Lightsail instances have no IAM role, so this needs AWS CLI credentials on the server. Setup requires read access to `/carc/prod/*` and does not prompt for environment values:
 
-1. Create parameters (SecureString) named `/carc/prod/<ENV_VAR_NAME>` in `us-west-2` (or set `AWS_REGION`).
-2. Create an IAM user allowed `ssm:GetParametersByPath` on `/carc/prod/*` (plus `kms:Decrypt` for the key).
+1. Create parameters named `/carc/prod/<ENV_VAR_NAME>` in `us-west-2` (or set `AWS_REGION`).
+2. Configure credentials with `ssm:GetParametersByPath` on `/carc/prod/*` (plus `kms:Decrypt` for SecureString parameters).
 3. On the server: install the AWS CLI and run `aws configure`.
-4. Run the script with `USE_SSM=1`.
+4. If creating or updating parameters interactively, run `bash deployment/scripts/ssm-write.sh --project carc --env prod` from the checkout. The setup script automatically fetches parameters when `.env` is absent; use `fetch-ssm-params.sh` to refresh it manually.
 
 For a single Lightsail instance, a root-only `/etc/carc/prod.env` is simpler and about as secure.
 

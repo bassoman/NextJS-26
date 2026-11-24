@@ -405,9 +405,9 @@ For high-security environments, store secrets in AWS SSM instead of a local `.en
 
 3. On Lightsail: `aws configure` with IAM credentials
 
-4. Run setup with SSM:
+4. Run setup (it fetches SSM values automatically if `.env` is missing):
    ```bash
-   USE_SSM=1 DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+   DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
    ```
 
 The setup script calls `fetch-ssm-params.sh`, which fetches all parameters from `/carc/prod/*` and writes them to `/var/www/carc-app/.env` with proper ownership (`www-data:webadmins`, mode 640).

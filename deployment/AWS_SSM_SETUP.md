@@ -82,24 +82,29 @@ aws ssm get-parameters-by-path --path /carc/prod --recursive --region us-west-2 
 
 ### Fresh Deployment with SSM
 
-When running `lightsail-setup.sh`, use the `USE_SSM=1` flag:
+Before running `lightsail-setup.sh`, configure AWS CLI credentials and create the `/carc/prod/*` parameters. You can create them in the AWS console or run the interactive writer from the repository checkout:
 
 ```bash
 ssh ubuntu@<static-ip>
 git clone https://github.com/bassoman/NextJS-26.git
 cd NextJS-26
 
-# Run setup with SSM
-USE_SSM=1 DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+# Requires ssm:PutParameter permission
+bash deployment/scripts/ssm-write.sh --project carc --env prod
+
+# Setup requires ssm:GetParametersByPath (and kms:Decrypt for SecureString values)
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
 ```
 
-The setup script will:
+If `/var/www/carc-app/.env` does not already exist, setup will:
 1. Call `fetch-ssm-params.sh`
 2. Fetch all parameters from `/carc/prod/*`
 3. Write to `/var/www/carc-app/.env`
 4. Set proper ownership: `www-data:webadmins` (mode 640)
 5. Build the app
 6. Start the service
+
+Setup does not prompt for environment values. It preserves an existing `.env` file; run `fetch-ssm-params.sh` manually if you need to refresh it.
 
 ### Manual SSM Fetch
 

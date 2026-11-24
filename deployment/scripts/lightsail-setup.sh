@@ -10,7 +10,6 @@
 #   APP_DIR         Application directory (default /var/www/carc-app)
 #   DOMAIN          Enable HTTPS with this domain name
 #   EMAIL           Let's Encrypt contact email (required with DOMAIN)
-#   USE_SSM         1 = fetch env from AWS SSM instead of prompting
 #   REPO_URL        Git repository URL (default: https://github.com/bassoman/NextJS-26.git)
 #   REPO_BRANCH     Git branch to clone (default: main)
 #   WWW_ALIAS       0 = skip www.DOMAIN (default 1)
@@ -96,14 +95,6 @@ else
     git clone --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
-echo "==> Installing SSM parameter writer"
-if [[ -f "$APP_DIR/deployment/scripts/ssm-write.sh" ]]; then
-    sudo install -o root -g root -m 0755 \
-        "$APP_DIR/deployment/scripts/ssm-write.sh" /usr/local/bin/ssm-write
-else
-    echo "WARNING: $APP_DIR/deployment/scripts/ssm-write.sh not found; skipping /usr/local/bin/ssm-write installation." >&2
-fi
-
 # Now fix ownership to www-data:webadmins (after all git operations)
 sudo chown -R www-data:webadmins "$APP_DIR"
 sudo chmod -R u+rwX,g+rwX,o+rX "$APP_DIR"
@@ -118,18 +109,9 @@ sudo bash "$APP_DIR/deployment/scripts/setup-deployment-users.sh" --init-directo
 echo "==> Environment file"
 ENV_FILE="$APP_DIR/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
-    if [[ "${USE_SSM:-0}" == "1" ]]; then
-        # Requires the AWS CLI configured with read access to /carc/prod/*
-        # fetch-ssm-params.sh now writes directly to the .env file
-        sudo -E env "PATH=$PATH" APP_DIR="$APP_DIR" bash "$APP_DIR/deployment/scripts/fetch-ssm-params.sh"
-    else
-        echo "Paste your production env (KEY=value lines), then Ctrl-D. Leave empty to edit later:"
-        tee "$ENV_FILE" >/dev/null
-        {
-            echo "PORT=$PORT"
-            echo "SQLITE_DATABASE_PATH=/var/carc/prod/data/carc.db"
-        } >> "$ENV_FILE"
-    fi
+    echo "Fetching environment variables from AWS SSM (/carc/prod/*)"
+    # Requires the AWS CLI configured with read access to /carc/prod/*
+    sudo -E env "PATH=$PATH" APP_DIR="$APP_DIR" bash "$APP_DIR/deployment/scripts/fetch-ssm-params.sh"
     sudo chown "$SERVICE_USER:$SERVICE_GROUP" "$ENV_FILE"
     sudo chmod 640 "$ENV_FILE"
 fi
@@ -175,7 +157,8 @@ DOMAIN="$DOMAIN" EMAIL="$EMAIL" APP_DIR="$APP_DIR" APP_PORT="$PORT" \
     bash "$APP_DIR/deployment/scripts/configure-nginx.sh"
 
 if [[ "$INIT_ONLY" == "1" ]]; then
-    echo "==> Initialization complete. Run /usr/local/bin/ssm-write to configure SSM before starting services."
+    echo "==> Initialization complete. SSM helper: $APP_DIR/deployment/scripts/ssm-write.sh"
+    echo "    After writing parameters with ssm-write, refresh .env with fetch-ssm-params.sh before starting services."
 else
     echo "==> Done. Status:"
     systemctl --no-pager status carc-app@prod | head -5
