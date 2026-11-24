@@ -83,6 +83,13 @@ git clone https://github.com/bassoman/NextJS-26.git  # Or: cd NextJS-26 && git p
 DOMAIN=example.com EMAIL=you@example.com bash NextJS-26/deployment/scripts/lightsail-setup.sh
 ```
 
+To deploy a different branch, set `REPO_BRANCH` before the command; it defaults to `main`:
+
+```bash
+REPO_BRANCH=staging DOMAIN=example.com EMAIL=you@example.com \
+  bash NextJS-26/deployment/scripts/lightsail-setup.sh
+```
+
 If the repo is private, authenticate with your SSH key or personal access token.
 
 | Variable | Required | Purpose |
@@ -90,6 +97,7 @@ If the repo is private, authenticate with your SSH key or personal access token.
 | `DOMAIN` | no | Enables the nginx `server_name` and HTTPS. Without it, the site is served over HTTP on the IP. |
 | `EMAIL` | with `DOMAIN` | Let's Encrypt contact (a personal address is fine). |
 | `REPO_URL` | no | Git repository URL to clone or pull from. Set this to the upstream repository URL when deploying from a fork (default: `https://github.com/bassoman/NextJS-26.git`). |
+| `REPO_BRANCH` | no | Branch to clone or pull from (default: `main`). |
 | `APP_DIR` | no | App location on the server (default `/var/www/carc-app`); must be writable by the current user. |
 | `WWW_ALIAS` | no | `0` to skip `www.DOMAIN` (default `1`: served and redirected to `DOMAIN`). |
 
