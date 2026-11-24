@@ -24,19 +24,22 @@ This document describes the production-standard multi-admin deployment model for
 | User/Group | Role | SSH Access | Home Dir | Purpose |
 |------------|------|-----------|----------|---------|
 | `www-data` | Service account | ❌ | /usr/sbin | Runs Node.js application |
-| `alice` | Deployer | ✅ | /home/alice | Can read/write code, restart services, run builds |
-| `bob` | Webadmin | ✅ | /home/bob | Can read/write code, but cannot restart services |
+| `alice` | Deployer | ✅ | /home/alice | Full sudo access; selected deployer commands also have password-free sudo |
+| `bob` | Webadmin | ✅ | /home/bob | Full sudo access |
+| `sudo` | Group | — | — | All managed team members; full administrative access |
 | `webadmins` | Group | — | — | All administrators (code access) |
-| `deployers` | Group | — | — | Subset authorized for deployments (service control) |
+| `deployers` | Group | — | — | Subset with additional password-free deployment commands |
 
 ### Permission Model
 
-| User/Group | `/var/www/carc-app` | `.env` | Build Scripts | systemctl restart | Database |
-|------------|---------------------|--------|---------------|-------------------|----------|
+| User/Group | `/var/www/carc-app` | `.env` | Build Scripts | Sudo | Database |
+|------------|---------------------|--------|---------------|-------|----------|
 | www-data | ✅ Read+Exec | ✅ Read | — | — | ✅ Read+Write |
-| webadmins | ✅ Read+Write | ✅ Read | ✅ View | ❌ | ✅ Read |
-| deployers | ✅ Read+Write | ✅ Read | ✅ **RUN** | ✅ **YES** (sudo) | ✅ Read+Write |
+| webadmins | ✅ Read+Write | ✅ Read | ✅ View | ✅ Full (password required) | ✅ Read |
+| deployers | ✅ Read+Write | ✅ Read | ✅ **RUN** | ✅ Full; selected deployment commands are password-free | ✅ Read+Write |
 | root | ✅ Full | ✅ Full | ✅ Full | ✅ Full | ✅ Full |
+
+All managed team accounts are added to Ubuntu's `sudo` group. This grants full root-level access, not just deployment permissions, so add only trusted administrators.
 
 ---
 
@@ -88,9 +91,11 @@ sudo bash /var/www/carc-app/deployment/scripts/setup-deployment-users.sh \
 
 Options:
 - `--user <username>` – Create a system user
-- `--password <password>` – Set password (prompted if omitted)
+- `--password <password>` – Set password
 - `--pubkey <path>` – Add SSH public key file
-- `--deployer` – Add to `deployers` group (service restart permissions)
+- `--deployer` – Add to `deployers` group (additional password-free deployment commands)
+
+Every managed account is also added to the `sudo` group. Set an account password with `--password` or `sudo passwd <username>` to use sudo. Team members must reconnect after group membership changes.
 
 ---
 
@@ -137,10 +142,7 @@ ls -la /var/carc/prod/data/
 # View logs
 journalctl -u carc-app@prod -20
 
-# CANNOT:
-# - git pull (read-only to the code)
-# - npm install or npm run build
-# - sudo systemctl restart (sudoers rule restricts this)
+# Can use sudo for administrative tasks, including restarting services (with a password).
 ```
 
 ### Database Backups
@@ -159,7 +161,7 @@ bash /var/www/carc-app/frontend/scripts/backup-sqlite.sh
 
 ## Sudoers Configuration
 
-Deployers have password-free sudo for these commands:
+All managed team accounts have full sudo access through the `sudo` group (with password authentication). Deployers additionally have password-free sudo for these commands:
 
 ```sudoers
 # File: /etc/sudoers.d/carc-deployers (created automatically by setup-deployment-users.sh)

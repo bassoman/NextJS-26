@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Multi-admin deployment user management script.
-# Creates system users with home directories and assigns them to webadmins/deployers groups.
+# Creates system users with home directories and assigns them to sudo/webadmins/deployers groups.
 #
 # Usage:
 #   sudo bash setup-deployment-users.sh --init-directories
@@ -10,9 +10,11 @@
 # Options:
 #   --init-directories          Initialize /var/www/carc-app with proper ownership and permissions
 #   --user <username>           Create a new system user (can be specified multiple times)
-#   --password <password>       Set password for the user (prompted if not provided)
+#   --password <password>       Set password for the user
 #   --pubkey <path>             Add SSH public key from file
 #   --deployer                  Add user to deployers group (can run deployment scripts)
+#
+# Every managed user is added to the sudo group and receives full sudo access.
 #
 # Requires: root (sudo)
 
@@ -22,6 +24,7 @@ APP_DIR="${APP_DIR:-/var/www/carc-app}"
 SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
 SERVICE_GROUP="${CARC_SERVICE_GROUP:-webadmins}"
 DEPLOYER_GROUP="deployers"
+SUDO_GROUP="sudo"
 
 # Color codes for output
 RED='\033[0;31m'
@@ -93,18 +96,26 @@ create_user() {
 
     if getent passwd "$username" >/dev/null; then
         log_warn "User already exists: $username"
+        usermod -aG "$SUDO_GROUP" "$username"
+        log_info "Added $username to sudo group (full sudo privileges)"
+        if [[ "$is_deployer" == "true" ]]; then
+            usermod -aG "$DEPLOYER_GROUP" "$username"
+            log_info "Added $username to deployers group"
+        fi
         return 0
     fi
 
     log_info "Creating user: $username"
     useradd -m -s /bin/bash -G "$SERVICE_GROUP" "$username"
+    usermod -aG "$SUDO_GROUP" "$username"
+    log_info "Added $username to sudo group (full sudo privileges)"
 
     # Set password if provided
     if [[ -n "$password" ]]; then
         echo "$username:$password" | chpasswd
         log_info "Password set for: $username"
     else
-        log_warn "No password provided for $username; use 'passwd $username' to set one"
+        log_warn "No password provided for $username; set one with 'passwd $username' to use sudo"
     fi
 
     # Add SSH public key if provided
@@ -179,7 +190,7 @@ Usage: sudo bash $(basename "$0") [OPTIONS]
 Options:
   --init-directories          Initialize /var/www/carc-app with proper ownership/permissions
   --user <username>           Create a new system user (repeatable)
-  --password <password>       Set password for the user (prompted if not provided)
+  --password <password>       Set password for the user
   --pubkey <path>             Add SSH public key from file
   --deployer                  Add the user to deployers group
 
@@ -187,6 +198,8 @@ Environment Variables:
   APP_DIR                     Application directory (default: /var/www/carc-app)
   CARC_SERVICE_USER          Service user (default: www-data)
   CARC_SERVICE_GROUP         Service group (default: webadmins)
+
+Every managed user is added to the sudo group (full sudo access; a password is required).
 
 Examples:
   # Initialize directories
@@ -198,7 +211,7 @@ Examples:
   # Create a deployer with SSH key
   sudo bash setup-deployment-users.sh --user bob --deployer --pubkey /tmp/bob_key.pub
 
-  # Create multiple users at once
+  # Create multiple users at once (each receives full sudo access)
   sudo bash setup-deployment-users.sh \\
     --user alice --password pass1 --deployer \\
     --user bob --pubkey /tmp/bob_key.pub \\

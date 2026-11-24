@@ -27,6 +27,8 @@ sudo bash /var/www/carc-app/deployment/scripts/setup-deployment-users.sh \
 # 4. Done! alice and bob can now SSH in and manage deployments
 ```
 
+Users created by `setup-deployment-users.sh` are added to Ubuntu's `sudo` group and have full administrative access. Set a password for each account (using `--password` or `sudo passwd <username>`) to use password-authenticated sudo. Only add trusted team members.
+
 ---
 
 ## Architecture Changes (v2.0)
