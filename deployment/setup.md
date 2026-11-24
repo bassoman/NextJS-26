@@ -88,11 +88,13 @@ If the repo is private, authenticate with your SSH key or personal access token.
 | `DOMAIN` | no | Enables the nginx `server_name` and HTTPS. Without it, the site is served over HTTP on the IP. |
 | `EMAIL` | with `DOMAIN` | Let's Encrypt contact (a personal address is fine). |
 | `USE_SSM` | no | `1` = fetch env from AWS SSM `/carc/prod/*` instead of prompting (see below). |
-| `REPO_URL` | no | Override the git repo URL. |
+| `REPO_URL` | no | Git repository URL to clone or pull from. Set this to the upstream repository URL when deploying from a fork (default: `https://github.com/bassoman/NextJS-26.git`). |
 | `APP_DIR` | no | App location on the server (default `/var/www/carc-app`); must be writable by the current user. |
 | `WWW_ALIAS` | no | `0` to skip `www.DOMAIN` (default `1`: served and redirected to `DOMAIN`). |
 
 When prompted, paste the `KEY=value` lines and press **Ctrl-D**.
+
+Append `--init` to install and configure without enabling or starting the app or backup services. The setup installs `ssm-write.sh` as `/usr/local/bin/ssm-write` when it is present in the selected repository; it does not run the helper automatically. Run it from the command line as needed before starting the services manually.
 
 ## 4. What the script does
 
@@ -100,7 +102,7 @@ When prompted, paste the `KEY=value` lines and press **Ctrl-D**.
 2. Clones (or pulls) the repo to `~/NextJS-26`, then `npm ci` and `npm run build`.
 3. Writes `/etc/carc/prod.env` (mode 600) if it doesn't already exist.
 4. Seeds `/var/carc/prod` and `/var/carc/sandbox` databases via `initialize-databases.sh` (skipped if the prod DB exists or the source DB is missing), then repairs permissions on existing database files and directories.
-5. Installs the systemd units, starts `carc-app@prod`, and enables the hourly `carc-backup.timer`.
+5. Installs the systemd units; normal mode starts `carc-app@prod` and enables the hourly `carc-backup.timer`, while `--init` leaves both services unenabled and does not start them.
 6. Runs `configure-nginx.sh` to proxy nginx to `127.0.0.1:3000`, and runs certbot if `DOMAIN` and `EMAIL` are set.
 
 The script is safe to re-run to deploy updates (it pulls, rebuilds and restarts), and it won't overwrite an existing env file or database.

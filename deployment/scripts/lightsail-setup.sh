@@ -4,15 +4,19 @@
 #
 # Usage (as a non-root user with sudo access):
 #   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh
+#   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh --init
 #
 # Optional variables:
 #   APP_DIR         Application directory (default /var/www/carc-app)
 #   DOMAIN          Enable HTTPS with this domain name
 #   EMAIL           Let's Encrypt contact email (required with DOMAIN)
 #   USE_SSM         1 = fetch env from AWS SSM instead of prompting
-#   REPO_URL        Override git repo URL (default: github.com/bassoman/NextJS-26.git)
+#   REPO_URL        Git repository URL (default: https://github.com/bassoman/NextJS-26.git)
 #   REPO_BRANCH     Git branch to clone (default: main)
 #   WWW_ALIAS       0 = skip www.DOMAIN (default 1)
+#
+# Options:
+#   --init          Install and configure without enabling or starting services
 #
 # Architecture:
 #   - App runs from /var/www/carc-app (FHS-compliant)
@@ -29,6 +33,26 @@ APP_DIR="${APP_DIR:-/var/www/carc-app}"
 PORT=3000
 SERVICE_USER="${CARC_SERVICE_USER:-www-data}"
 SERVICE_GROUP="${CARC_SERVICE_GROUP:-webadmins}"
+INIT_ONLY=0
+
+while (($#)); do
+    case "$1" in
+        --init)
+            INIT_ONLY=1
+            ;;
+        -h|--help)
+            echo "Usage: $0 [--init]"
+            echo "  --init    Install and configure without enabling or starting services"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            echo "Usage: $0 [--init]" >&2
+            exit 2
+            ;;
+    esac
+    shift
+done
 
 if [[ $EUID -eq 0 ]]; then
     echo "Run as a non-root user with sudo access (not as root)" >&2
@@ -63,14 +87,21 @@ echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
     # If directory already exists, ensure we're on the right branch
     sudo chown -R "$(id -u):$(id -g)" "$APP_DIR"
-    git -C "$APP_DIR" fetch origin
     git -C "$APP_DIR" checkout "$REPO_BRANCH"
-    git -C "$APP_DIR" pull --ff-only origin "$REPO_BRANCH"
+    git -C "$APP_DIR" pull --ff-only "$REPO_URL" "$REPO_BRANCH"
 else
     # Create directory writable by current user for git clone
     sudo mkdir -p "$APP_DIR"
     sudo chown "$(id -u):$(id -g)" "$APP_DIR"
     git clone --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR"
+fi
+
+echo "==> Installing SSM parameter writer"
+if [[ -f "$APP_DIR/deployment/scripts/ssm-write.sh" ]]; then
+    sudo install -o root -g root -m 0755 \
+        "$APP_DIR/deployment/scripts/ssm-write.sh" /usr/local/bin/ssm-write
+else
+    echo "WARNING: $APP_DIR/deployment/scripts/ssm-write.sh not found; skipping /usr/local/bin/ssm-write installation." >&2
 fi
 
 # Now fix ownership to www-data:webadmins (after all git operations)
@@ -131,14 +162,22 @@ sudo env CARC_SERVICE_USER="$SERVICE_USER" CARC_SERVICE_GROUP="$SERVICE_GROUP" \
 echo "==> systemd services"
 sudo cp "$APP_DIR/deployment/systemd"/* /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable carc-app@prod
-sudo systemctl restart carc-app@prod
-sudo systemctl enable --now carc-backup.timer
+if [[ "$INIT_ONLY" == "1" ]]; then
+    echo "Initialization mode: not enabling or starting carc-app@prod or carc-backup.timer."
+else
+    sudo systemctl enable carc-app@prod
+    sudo systemctl restart carc-app@prod
+    sudo systemctl enable --now carc-backup.timer
+fi
 
 echo "==> nginx / HTTPS"
 DOMAIN="$DOMAIN" EMAIL="$EMAIL" APP_DIR="$APP_DIR" APP_PORT="$PORT" \
     bash "$APP_DIR/deployment/scripts/configure-nginx.sh"
 
-echo "==> Done. Status:"
-systemctl --no-pager status carc-app@prod | head -5
-curl -sI "http://127.0.0.1:${PORT}" | head -1 || true
+if [[ "$INIT_ONLY" == "1" ]]; then
+    echo "==> Initialization complete. Run /usr/local/bin/ssm-write to configure SSM before starting services."
+else
+    echo "==> Done. Status:"
+    systemctl --no-pager status carc-app@prod | head -5
+    curl -sI "http://127.0.0.1:${PORT}" | head -1 || true
+fi
