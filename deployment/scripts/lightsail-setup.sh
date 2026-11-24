@@ -84,10 +84,15 @@ sudo chmod g+s /var/www
 
 echo "==> Fetching code into $APP_DIR"
 if [[ -d "$APP_DIR/.git" ]]; then
-    # If directory already exists, ensure we're on the right branch
+    # Fetch first so a branch not present in the local checkout can be selected.
     sudo chown -R "$(id -u):$(id -g)" "$APP_DIR"
-    git -C "$APP_DIR" checkout "$REPO_BRANCH"
-    git -C "$APP_DIR" pull --ff-only "$REPO_URL" "$REPO_BRANCH"
+    git -C "$APP_DIR" fetch "$REPO_URL" "$REPO_BRANCH"
+    if git -C "$APP_DIR" show-ref --verify --quiet "refs/heads/$REPO_BRANCH"; then
+        git -C "$APP_DIR" checkout "$REPO_BRANCH"
+    else
+        git -C "$APP_DIR" checkout -b "$REPO_BRANCH" FETCH_HEAD
+    fi
+    git -C "$APP_DIR" merge --ff-only FETCH_HEAD
 else
     # Create directory writable by current user for git clone
     sudo mkdir -p "$APP_DIR"
