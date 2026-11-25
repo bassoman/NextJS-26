@@ -64,7 +64,7 @@ The updated scripts now do all of this automatically:
 
 ```bash
 # Just run the one command:
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 ```
 
 The script handles:
@@ -112,7 +112,7 @@ In those cases, refer to this guide or [PERMISSION_FIXES.md](./PERMISSION_FIXES.
 
 All deployment scripts have been updated to handle permissions automatically:
 
-- **lightsail-setup.sh** - Main orchestration (most changes)
+- **lightsail-deploy.sh** - Main orchestration (most changes)
 - **setup-deployment-users.sh** - User/group management (no changes, already correct)
 - **initialize-databases.sh** - Database creation
 - **fetch-ssm-params.sh** - Environment setup

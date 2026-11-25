@@ -82,7 +82,7 @@ aws ssm get-parameters-by-path --path /carc/prod --recursive --region us-west-2 
 
 ### Fresh Deployment with SSM
 
-Before running `lightsail-setup.sh`, configure AWS CLI credentials and create the `/carc/prod/*` parameters. You can create them in the AWS console or run the interactive writer from the repository checkout:
+Before running `lightsail-deploy.sh`, configure AWS CLI credentials and create the `/carc/prod/*` parameters. You can create them in the AWS console or run the interactive writer from the repository checkout:
 
 ```bash
 ssh ubuntu@<static-ip>
@@ -93,7 +93,7 @@ cd NextJS-26
 bash deployment/scripts/ssm-write.sh --project carc --env prod
 
 # Setup requires ssm:GetParametersByPath (and kms:Decrypt for SecureString values)
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 ```
 
 If `/var/www/carc-app/.env` does not already exist, setup will:

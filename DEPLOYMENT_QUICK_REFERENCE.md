@@ -8,7 +8,7 @@ ssh ubuntu@<static-ip>
 git clone https://github.com/bassoman/NextJS-26.git && cd NextJS-26
 
 # 2. Run setup (creates app at /var/www/carc-app)
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 
 # 3. Add team members
 sudo bash /var/www/carc-app/deployment/scripts/setup-deployment-users.sh \

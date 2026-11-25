@@ -9,8 +9,8 @@
 #   ENABLE_HTTPS          1/0. Default: 1 if DOMAIN and EMAIL are set, else 0.
 #   WWW_ALIAS             1 = also serve www.DOMAIN and redirect it to DOMAIN (default 1).
 #   APP_DIR               Location of the app on the server (default /var/www/carc-app).
-#                         Must match lightsail-setup.sh APP_DIR. nginx only proxies; APP_DIR is
-#                         used by lightsail-setup.sh for systemd WorkingDirectory.
+#                         Must match lightsail-deploy.sh APP_DIR. nginx only proxies; APP_DIR is
+#                         used by lightsail-deploy.sh for systemd WorkingDirectory.
 #   APP_PORT              Port the Next.js app listens on (default 3000).
 #   SITE_NAME             nginx site file name (default carc).
 #   CLIENT_MAX_BODY_SIZE  Upload limit (default 10m).

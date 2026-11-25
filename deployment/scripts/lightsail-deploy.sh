@@ -3,14 +3,14 @@
 # Follows production-standard architecture with multi-admin isolation.
 #
 # Usage (as a non-root user with sudo access):
-#   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh
-#   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-setup.sh --init
+#   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-deploy.sh
+#   DOMAIN=example.com EMAIL=you@example.com bash deployment/scripts/lightsail-deploy.sh --init
 #
 # Optional variables:
 #   APP_DIR         Application directory (default /var/www/carc-app)
 #   DOMAIN          Enable HTTPS with this domain name
 #   EMAIL           Let's Encrypt contact email (required with DOMAIN)
-#   REPO_URL        Git repository URL (default: https://github.com/bassoman/NextJS-26.git)
+#   REPO_URL        Git repository URL (default: https://github.com/pvatkins/NextJS-26.git)
 #   REPO_BRANCH     Git branch to clone (default: main)
 #   WWW_ALIAS       0 = skip www.DOMAIN (default 1)
 #
@@ -26,7 +26,7 @@ set -Eeuo pipefail
 
 DOMAIN="${DOMAIN:-}"
 EMAIL="${EMAIL:-}"
-REPO_URL="${REPO_URL:-https://github.com/bassoman/NextJS-26.git}"
+REPO_URL="${REPO_URL:-https://github.com/pvatkins/NextJS-26.git}"
 REPO_BRANCH="${REPO_BRANCH:-main}"
 APP_DIR="${APP_DIR:-/var/www/carc-app}"
 PORT=3000

@@ -56,7 +56,7 @@ sudo bash deployment/scripts/setup-deployment-users.sh \
 
 ---
 
-### 2. Modified: `deployment/scripts/lightsail-setup.sh`
+### 2. Modified: `deployment/scripts/lightsail-deploy.sh`
 **Purpose**: Complete instance setup with new multi-admin architecture
 
 **Changes**:
@@ -218,7 +218,7 @@ git clone https://github.com/bassoman/NextJS-26.git
 cd NextJS-26
 
 # 3. Run the modernized setup script
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 # Prompts for environment variables, then runs:
 # - Installs packages
 # - Clones app to /var/www/carc-app
@@ -303,7 +303,7 @@ The changes are **non-breaking** for existing deployments:
 Before deploying to production:
 
 - [ ] Create a fresh Lightsail instance (Ubuntu 22.04 or 24.04)
-- [ ] Run lightsail-setup.sh and verify no errors
+- [ ] Run lightsail-deploy.sh and verify no errors
 - [ ] Check app is running: `curl http://127.0.0.1:3000`
 - [ ] Create test users with setup-deployment-users.sh
 - [ ] SSH as deployer and verify can git pull/npm build/systemctl restart
@@ -323,7 +323,7 @@ Before deploying to production:
 | File | Change Type | Impact |
 |------|-------------|--------|
 | `deployment/scripts/setup-deployment-users.sh` | Created | New user management |
-| `deployment/scripts/lightsail-setup.sh` | Modified | Uses new paths/users |
+| `deployment/scripts/lightsail-deploy.sh` | Modified | Uses new paths/users |
 | `deployment/systemd/carc-app@.service` | Modified | Runs as www-data |
 | `deployment/scripts/initialize-databases.sh` | Modified | New ownership |
 | `deployment/MULTI_ADMIN_SETUP.md` | Created | Comprehensive guide |
@@ -398,7 +398,7 @@ Each admin has their own SSH account:
 ```bash
 # Step 1: New instance with new setup
 # (Run on fresh Lightsail instance)
-DOMAIN=example.com EMAIL=admin@example.com bash lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash lightsail-deploy.sh
 
 # Step 2: Verify thoroughly
 # (All tests pass, users created, app working)

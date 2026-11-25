@@ -17,7 +17,7 @@ git clone https://github.com/bassoman/NextJS-26.git
 cd NextJS-26
 
 # 2. Run the setup script (creates app at /var/www/carc-app)
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 
 # 3. Add team members
 sudo bash /var/www/carc-app/deployment/scripts/setup-deployment-users.sh \
@@ -80,14 +80,14 @@ SSH in as a non-root user and run:
 ```bash
 ssh ubuntu@<static-ip>
 git clone https://github.com/bassoman/NextJS-26.git  # Or: cd NextJS-26 && git pull
-DOMAIN=example.com EMAIL=you@example.com bash NextJS-26/deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=you@example.com bash NextJS-26/deployment/scripts/lightsail-deploy.sh
 ```
 
 To deploy a different branch, set `REPO_BRANCH` before the command; it defaults to `main`:
 
 ```bash
 REPO_BRANCH=staging DOMAIN=example.com EMAIL=you@example.com \
-  bash NextJS-26/deployment/scripts/lightsail-setup.sh
+  bash NextJS-26/deployment/scripts/lightsail-deploy.sh
 ```
 
 If the repo is private, authenticate with your SSH key or personal access token.
@@ -161,7 +161,7 @@ Or copy `deployment/nginx.env.example` to `deployment/nginx.env` (gitignored), e
 | `EMAIL` | none | Let's Encrypt contact; with `DOMAIN` enables HTTPS. |
 | `ENABLE_HTTPS` | 1 if both set | Force on/off. |
 | `WWW_ALIAS` | `1` | Serve `www.DOMAIN`, redirecting to `DOMAIN`, and include it in the cert. |
-| `APP_DIR` | `~/NextJS-26` | App directory on the server (systemd `WorkingDirectory` set by `lightsail-setup.sh`). |
+| `APP_DIR` | `~/NextJS-26` | App directory on the server (systemd `WorkingDirectory` set by `lightsail-deploy.sh`). |
 | `APP_PORT` | `3000` | Port the Next.js app listens on. |
 | `SITE_NAME` | `carc` | nginx site file name. |
 | `CLIENT_MAX_BODY_SIZE` | `10m` | Upload limit. |

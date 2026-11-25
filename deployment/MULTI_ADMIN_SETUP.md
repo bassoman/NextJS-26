@@ -58,7 +58,7 @@ git clone https://github.com/bassoman/NextJS-26.git
 cd NextJS-26
 
 # Run the setup script
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 ```
 
 This script will:
@@ -318,7 +318,7 @@ scp ubuntu@old-instance:/tmp/prod.env.backup ./
 
 ```bash
 # SSH into new instance
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 
 # Paste your environment variables when prompted
 # Make sure NEXT_PUBLIC_* vars are included
@@ -407,7 +407,7 @@ For high-security environments, store secrets in AWS SSM instead of a local `.en
 
 4. Run setup (it fetches SSM values automatically if `.env` is missing):
    ```bash
-   DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+   DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
    ```
 
 The setup script calls `fetch-ssm-params.sh`, which fetches all parameters from `/carc/prod/*` and writes them to `/var/www/carc-app/.env` with proper ownership (`www-data:webadmins`, mode 640).

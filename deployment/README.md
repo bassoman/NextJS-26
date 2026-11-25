@@ -28,7 +28,7 @@ Complete guide to deploying CARC on Ubuntu Lightsail with production-standard mu
 - **[NGINX_CONFIG_REFERENCE.md](./NGINX_CONFIG_REFERENCE.md)** - Quick reference for viewing configs
 
 ### Scripts
-- **[scripts/lightsail-setup.sh](./scripts/lightsail-setup.sh)** - Main deployment automation
+- **[scripts/lightsail-deploy.sh](./scripts/lightsail-deploy.sh)** - Main deployment automation
 - **[scripts/setup-deployment-users.sh](./scripts/setup-deployment-users.sh)** - User and group management
 - **[scripts/configure-nginx.sh](./scripts/configure-nginx.sh)** - nginx setup with Let's Encrypt
 - **[scripts/fetch-ssm-params.sh](./scripts/fetch-ssm-params.sh)** - Environment variable fetcher
@@ -47,7 +47,7 @@ Complete guide to deploying CARC on Ubuntu Lightsail with production-standard mu
 ssh ubuntu@<lightsail-ip>
 git clone https://github.com/bassoman/NextJS-26.git
 cd NextJS-26
-DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-setup.sh
+DOMAIN=example.com EMAIL=admin@example.com bash deployment/scripts/lightsail-deploy.sh
 ```
 
 ### 2. Create Admin Users
@@ -69,7 +69,7 @@ curl https://example.com
 
 ### For First-Time Deployment
 1. Read: [setup.md](./setup.md)
-2. Run: [scripts/lightsail-setup.sh](./scripts/lightsail-setup.sh)
+2. Run: [scripts/lightsail-deploy.sh](./scripts/lightsail-deploy.sh)
 3. Reference: [NGINX_CONFIGURATION.md](./NGINX_CONFIGURATION.md)
 
 ### For Understanding the Architecture
@@ -144,7 +144,7 @@ deployment/
 ├── nginx.env.example                   # nginx config template
 ├── sudoers-carc-deployers.template     # Sudoers config
 ├── scripts/
-│   ├── lightsail-setup.sh             # Main deployment script
+│   ├── lightsail-deploy.sh             # Main deployment script
 │   ├── setup-deployment-users.sh      # User management
 │   ├── configure-nginx.sh             # nginx installer
 │   ├── fetch-ssm-params.sh            # SSM parameter fetcher

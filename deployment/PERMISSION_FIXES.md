@@ -44,7 +44,7 @@ This ensures:
 
 ### 2. Scripts Modified
 
-#### lightsail-setup.sh (Primary Deployment Script)
+#### lightsail-deploy.sh (Primary Deployment Script)
 
 **Early initialization**:
 ```bash
@@ -134,7 +134,7 @@ chmod g+s "$target_dir"
 **Already had proper implementation**:
 - `ensure_groups()` creates webadmins and deployers groups
 - `init_directories()` sets 775 permissions with setgid
-- Already called by lightsail-setup.sh (now moved earlier)
+- Already called by lightsail-deploy.sh (now moved earlier)
 
 **Changes**:
 - No changes needed (already correct)
@@ -166,7 +166,7 @@ This handles the case where:
 ## Deployment Flow (After Fixes)
 
 ```
-1. User runs: lightsail-setup.sh
+1. User runs: lightsail-deploy.sh
 2. Creates groups: webadmins, deployers
 3. Prepares /var/www with correct perms
 4. Clones repo to /var/www/carc-app
